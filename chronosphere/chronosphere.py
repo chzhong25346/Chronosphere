@@ -1,19 +1,7 @@
-from .utils.config import Config
-from .utils.fetch import get_daily_adjusted, fetchError
-from .utils.util import missing_ticker
+import getopt, sys, time, math, logging, logging.config
 from .db.db import Db
-from .db.write import bulk_save, insert_onebyone, writeError, foundDup
-from .db.mapping import map_index, map_quote, map_fix_quote, map_report
-from .db.read import read_ticker, has_index
-from .report.report import report
-from .simulation.simulator import simulator
-from .learning.updateEIA import updateEIA
-import logging
-import logging.config
-import getopt
-import time
-import math
-import os, sys
+from .utils.config import Config
+from .analysis.analysis_module import analysis_hub
 logging.config.fileConfig('chronosphere/log/logging.conf')
 logger = logging.getLogger('main')
 
@@ -21,23 +9,45 @@ logger = logging.getLogger('main')
 def main(argv):
     time_start = time.time()
     try:
-        opts, args = getopt.getopt(argv,"u:rse",["update=", "report=", "simulate=", "eia="])
-    except getopt.GetoptError:
-        print('run.py -u <full|compact|fastfix|slowfix> <csi300>')
-        print('run.py -r <csi300>')
-        print('run.py -s <csi300>')
-        print('run.py -e')
+        opts, args = getopt.getopt(sys.argv[1:], "ht:", ["help", "turnover="])
+    except getopt.GetoptError as err:
+        print(err)
+        usage()
         sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print('run.py -u <full|compact|fastfix|slowfix>  <csi300>')
-            print('run.py -r <csi300>')
-            print('run.py -s <csi300>')
-            print('run.py -e')
+        output = None
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
             sys.exit()
-
-        elif opt in ("-e", "--eia"): # Update EIA data
-            eia()
+        elif o in ("-t", "--turnover"):
+            market = a
+            to_analysis(market)
+        else:
+            assert False, "unhandled option"
 
     elapsed = math.ceil((time.time() - time_start)/60)
     logger.info("%s took %d minutes to run" % ( (',').join(argv), elapsed ) )
+
+
+def usage():
+    print('Turnover Ratio Analysis: -t/--turnover market(china/na)')
+
+
+def to_analysis(market):
+    logger.info('Run Task: [Turnover Analysis]')
+    if market == 'china':
+        db_name_list = ['csi300','financials','learning']
+    elif market == 'na':
+        db_name_list = ['nasdaq100','tsxci','sp100', 'financials','learning']
+    sdic = {}
+    for name in db_name_list:
+        Config.DB_NAME = name
+        db = Db(Config)
+        s = db.session()
+        sdic.update({name:s})
+
+    analysis_hub('turnover', sdic=sdic)
+
+    for name, s in sdic.items():
+        s.close()
+        logger.info("Session closed: '%s' " % s.bind.url.database)

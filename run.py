@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from skylantern.skylantern import main
+from chronosphere.chronosphere import main
 
 
 if __name__ == '__main__':
