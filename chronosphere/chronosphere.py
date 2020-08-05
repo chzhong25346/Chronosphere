@@ -37,8 +37,10 @@ def to_analysis(market):
     logger.info('Run Task: [Turnover Analysis]')
     if market == 'china':
         db_name_list = ['csi300','financials','learning']
-    elif market == 'na':
-        db_name_list = ['nasdaq100','tsxci','sp100', 'financials','learning']
+    elif market == 'canada':
+        db_name_list = ['tsxci','financials','learning']
+    elif market == 'usa':
+        db_name_list = ['sp100','nasdaq100','financials','learning']
     sdic = {}
     for name in db_name_list:
         Config.DB_NAME = name
