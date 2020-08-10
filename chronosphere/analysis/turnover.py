@@ -146,7 +146,7 @@ def tor_main(ticker, dbname, s, s_f):
                         alert_date =  None
 
 
-                    if -10 <= volume_buffer <= 10:
+                    if -5 <= volume_buffer <= 5:
                         return {
                                 'symbol':ticker,
                                 'date': latest_date,
@@ -234,7 +234,7 @@ def tor_main(ticker, dbname, s, s_f):
                     except:
                         alert_date = None
 
-                    if -10 <= volume_buffer <= 10:
+                    if -5 <= volume_buffer <= 5:
                         return {'symbol':ticker,
                                 'date': latest_date,
                                 'model':'lhc',
