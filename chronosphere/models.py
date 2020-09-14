@@ -30,7 +30,6 @@ class Quote(Quote_CSI300):
     adjusted = db.Column(db.Float, nullable=True)
 
 
-
 class Report(db.Model):
     __tablename__ = 'report'
     id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)
@@ -78,3 +77,19 @@ class Tor_report(db.Model):
     current_start = db.Column(db.DateTime, nullable=True)
     current_tor = db.Column(db.Float, nullable=True)
     volume_buffer = db.Column(db.Float, nullable=True)
+
+
+class Line_report(db.Model):
+    __tablename__ = 'line_report'
+    id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False)
+    index = db.Column(db.String(20), nullable=False)
+    symbol = db.Column(db.String(10), nullable=False)
+    model = db.Column(db.String(3), nullable=True)
+    type = db.Column(db.String(10), nullable=True)
+    x1 = db.Column(db.DateTime, nullable=False)
+    x2 = db.Column(db.DateTime, nullable=False)
+    slope = db.Column(db.Float, nullable=True)
+    touching = db.Column(db.Boolean, nullable=True)
+    breaking = db.Column(db.Boolean, nullable=True)
+    reunion = db.Column(db.Boolean, nullable=True)

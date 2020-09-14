@@ -9,7 +9,7 @@ logger = logging.getLogger('main')
 def main(argv):
     time_start = time.time()
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ht:", ["help", "turnover="])
+        opts, args = getopt.getopt(sys.argv[1:], "ht:l:", ["help", "turnover=","line="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -21,7 +21,10 @@ def main(argv):
             sys.exit()
         elif o in ("-t", "--turnover"):
             market = a
-            to_analysis(market)
+            analysis(market, 'turnover')
+        elif o in ("-l", "--line"):
+            market = a
+            analysis(market, 'lines')
         else:
             assert False, "unhandled option"
 
@@ -30,11 +33,15 @@ def main(argv):
 
 
 def usage():
-    print('Turnover Ratio Analysis: -t/--turnover market(china/na)')
+    helps = """
+    1.  -t/--turnover market(china/canada/usa) : Turnover Ratio Analysis:
+    2.  -l/--line market(china/na) : Support and Resistance Line Analysis:
+    """
+    print(helps)
 
 
-def to_analysis(market):
-    logger.info('Run Task: [Turnover Analysis]')
+def analysis(market, module):
+    logger.info('Load module: [Analysis]')
     if market == 'china':
         db_name_list = ['csi300','financials','learning']
     elif market == 'canada':
@@ -48,7 +55,7 @@ def to_analysis(market):
         s = db.session()
         sdic.update({name:s})
 
-    analysis_hub('turnover', sdic=sdic)
+    analysis_hub(module, sdic=sdic)
 
     for name, s in sdic.items():
         s.close()
