@@ -93,3 +93,13 @@ class Line_report(db.Model):
     touching = db.Column(db.Boolean, nullable=True)
     breaking = db.Column(db.Boolean, nullable=True)
     reunion = db.Column(db.Boolean, nullable=True)
+
+
+class Gaps(db.Model):
+    __tablename__ = 'gaps'
+    id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False)
+    index = db.Column(db.String(20), nullable=False)
+    symbol = db.Column(db.String(10), nullable=False)
+    gap_high = db.Column(db.Float, nullable=True)
+    gap_low = db.Column(db.Float, nullable=True)

@@ -9,7 +9,7 @@ logger = logging.getLogger('main')
 def main(argv):
     time_start = time.time()
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ht:l:", ["help", "turnover=","line="])
+        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:", ["help", "turnover=","line=","gap"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -25,6 +25,9 @@ def main(argv):
         elif o in ("-l", "--line"):
             market = a
             analysis(market, 'lines')
+        elif o in ("-g", "--gap"):
+            market = a
+            analysis(market, 'gaps')
         else:
             assert False, "unhandled option"
 
@@ -34,8 +37,9 @@ def main(argv):
 
 def usage():
     helps = """
-    1.  -t/--turnover market(china/canada/usa) : Turnover Ratio Analysis:
-    2.  -l/--line market(china/na) : Support and Resistance Line Analysis:
+    1.  -t/--turnover market(china/canada/usa) : Turnover Ratio Analysis
+    2.  -l/--line market(china/na) : Support and Resistance Line Analysis
+    2.  -g/--gap market(china/na) : Gaps created with range
     """
     print(helps)
 
