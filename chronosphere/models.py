@@ -103,3 +103,12 @@ class Gaps(db.Model):
     symbol = db.Column(db.String(10), nullable=False)
     gap_high = db.Column(db.Float, nullable=True)
     gap_low = db.Column(db.Float, nullable=True)
+
+
+class Gaps_report(db.Model):
+    __tablename__ = 'gaps_report'
+    id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False)
+    index = db.Column(db.String(20), nullable=False)
+    symbol = db.Column(db.String(10), nullable=False)
+    gap_date = db.Column(db.DateTime, nullable=False)
