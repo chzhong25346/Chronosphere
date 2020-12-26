@@ -1,6 +1,7 @@
 import getopt, sys, time, math, logging, logging.config
 from .db.db import Db
 from .utils.config import Config
+from .utils.utils import gen_id
 from .analysis.analysis_module import analysis_hub
 logging.config.fileConfig('chronosphere/log/logging.conf')
 logger = logging.getLogger('main')
@@ -9,7 +10,7 @@ logger = logging.getLogger('main')
 def main(argv):
     time_start = time.time()
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:", ["help", "turnover=","line=","gap"])
+        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:r:", ["help", "turnover=","line=","gap","rsi"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -28,6 +29,9 @@ def main(argv):
         elif o in ("-g", "--gap"):
             market = a
             analysis(market, 'gaps')
+        elif o in ("-r", "--rsi"):
+            market = a
+            analysis(market, 'rsi')
         else:
             assert False, "unhandled option"
 
@@ -38,8 +42,9 @@ def main(argv):
 def usage():
     helps = """
     1.  -t/--turnover market(china/canada/usa) : Turnover Ratio Analysis
-    2.  -l/--line market(china/na) : Support and Resistance Line Analysis
-    2.  -g/--gap market(china/na) : Gaps created with range
+    2.  -l/--line market(china/canada/usa) : Support and Resistance Line Analysis
+    3.  -g/--gap market(china/canada/usa) : Gaps created with range
+    4.  -r/--rsi market(china/canada/usa) : RSI prediction
     """
     print(helps)
 
@@ -52,6 +57,8 @@ def analysis(market, module):
         db_name_list = ['tsxci','financials','learning']
     elif market == 'usa':
         db_name_list = ['sp100','nasdaq100','financials','learning']
+    elif market == 'testing':
+        db_name_list = ['testing','learning']
     sdic = {}
     for name in db_name_list:
         Config.DB_NAME = name

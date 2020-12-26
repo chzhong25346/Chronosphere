@@ -112,3 +112,14 @@ class Gaps_report(db.Model):
     index = db.Column(db.String(20), nullable=False)
     symbol = db.Column(db.String(10), nullable=False)
     gap_date = db.Column(db.DateTime, nullable=False)
+
+class Rsi_predict(db.Model):
+    __tablename__ = 'rsi_predict'
+    id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False)
+    index = db.Column(db.String(20), nullable=False)
+    symbol = db.Column(db.String(10), nullable=False)
+    current_rsi = db.Column(db.Float, nullable=True)
+    target_rsi = db.Column(db.Float, nullable=True)
+    target_close = db.Column(db.Float, nullable=True)
+    trend = db.Column(db.String(4), nullable=True)
