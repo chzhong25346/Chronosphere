@@ -18,7 +18,6 @@ def rsi_prediction(sdic):
             logger.info("Start to process: %s" % dbname)
             tickers = [r.symbol for r in s.query(Index.symbol).distinct()]
             for ticker in tickers:
-            # for ticker in ['RY']:
                 if dbname == 'csi300':
                     df = pd.read_sql(s.query(Quote_CSI300).\
                         filter(Quote_CSI300.symbol == ticker).\
