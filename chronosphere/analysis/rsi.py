@@ -52,9 +52,9 @@ def rsi_prediction(sdic):
                 new_close, new_rsi = None, None
                 if over_buy and previous_rsi >= 50 and latest_rsi < 50:
                     new_close, new_rsi = _get_predicted_rsi(df, latest_rsi, 30)
-                elif over_buy and previous_rsi > 69 and latest_rsi < 70:
+                elif over_buy and previous_rsi >= 70 and latest_rsi < 70:
                     new_close, new_rsi = _get_predicted_rsi(df, latest_rsi, 50)
-                elif over_sell and previous_rsi < 31 and latest_rsi >30:
+                elif over_sell and previous_rsi <= 30 and latest_rsi >30:
                     new_close, new_rsi = _get_predicted_rsi(df, latest_rsi, 50)
                 elif over_sell and previous_rsi <= 50 and latest_rsi >50:
                     new_close, new_rsi = _get_predicted_rsi(df, latest_rsi, 70)
