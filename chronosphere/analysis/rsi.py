@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 from datetime import timedelta
-from ..models import Index, Quote, Quote_CSI300, Rsi_predict
+from ..models import Index, Quote, Quote_CSI300, Rsi_predict, Rsi_predict_report
 from ..utils.utils import gen_id
 from stockstats import StockDataFrame
 logger = logging.getLogger('main.gaps')
@@ -12,6 +12,7 @@ def rsi_prediction(sdic):
     # Create RSi_predict table
     s_l = sdic['learning']
     Rsi_predict.__table__.create(s_l.get_bind(), checkfirst=True)
+    Rsi_predict_report.__table__.create(s_l.get_bind(), checkfirst=True)
 
     for dbname, s in sdic.items():
         if dbname in ('testing','tsxci','nasdaq100','sp100','csi300'):
@@ -32,6 +33,8 @@ def rsi_prediction(sdic):
                 df_latest = df.iloc[-1]
                 latest_date = df_latest.name
                 latest_close = df_latest['close']
+                latest_high = df_latest['high']
+                latest_low = df_latest['low']
                 # Calculate RSI-14
                 df = StockDataFrame.retype(df)
                 df['rsi_14'] = df['rsi_14']
@@ -59,10 +62,45 @@ def rsi_prediction(sdic):
                 elif over_sell and previous_rsi <= 50 and latest_rsi >50:
                     new_close, new_rsi = _get_predicted_rsi(df, latest_rsi, 70)
 
+                # 1 Verify existing record with latest price
+                rsi_predict = s_l.query(Rsi_predict).filter(Rsi_predict.symbol == ticker,
+                                Rsi_predict.index == dbname).first()
+
+                # 1.1 rsi_predict exists and price reached then delete and write
+                if rsi_predict is not None:
+                    target_close = rsi_predict.target_close
+                    predict_date = rsi_predict.date
+                    if latest_low <= target_close <= latest_high and predict_date < latest_date:
+                        try:
+                            # Remove existing report
+                            s_l.query(Rsi_predict_report).filter(Rsi_predict_report.symbol == ticker,
+                                                          Rsi_predict_report.index == dbname).delete()
+                            s_l.commit()
+                            record = {'id': gen_id(ticker+dbname+str(predict_date)+str(latest_date)),
+                                      'reached_date': latest_date,
+                                      'predict_date': predict_date,
+                                      'index': dbname,
+                                      'symbol': ticker,
+                                      'high': latest_high,
+                                      'low': latest_low,
+                                      'current_rsi': rsi_predict.current_rsi,
+                                      'target_rsi': rsi_predict.target_rsi,
+                                      'target_close': rsi_predict.target_close,
+                                      'trend': rsi_predict.trend
+                                      }
+                            s_l.add(Rsi_predict_report(**record))
+                            s_l.commit()
+                            logger.info("Reached prediction - (%s, %s)" % (dbname, ticker))
+                        except:
+                            pass
+
+
+                # 2 calculate prediction
                 if new_close and new_rsi:
                     try:
                         # Remove existing prediction
-                        s_l.query(Rsi_predict).filter(Rsi_predict.symbol==ticker, Rsi_predict.index==dbname).delete()
+                        s_l.query(Rsi_predict).filter(Rsi_predict.symbol == ticker,
+                                                      Rsi_predict.index == dbname).delete()
                         s_l.commit()
                         record = {'id':gen_id(ticker+dbname+str(latest_date)),
                                  'date': latest_date,
