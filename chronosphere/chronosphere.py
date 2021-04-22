@@ -44,7 +44,7 @@ def usage():
     1.  -t/--turnover market(china/canada/usa) : Turnover Ratio Analysis
     2.  -l/--line market(china/canada/usa) : Support and Resistance Line Analysis
     3.  -g/--gap market(china/canada/usa) : Gaps created with range
-    4.  -r/--rsi market(china/canada/usa) : RSI prediction
+    4.  -r/--rsi market(china/canada/usa/eei) : RSI prediction
     """
     print(helps)
 
@@ -57,6 +57,8 @@ def analysis(market, module):
         db_name_list = ['tsxci','financials','learning']
     elif market == 'usa':
         db_name_list = ['sp100','nasdaq100','financials','learning']
+    elif market == 'eei':
+        db_name_list = ['eei','financials','learning']
     elif market == 'testing':
         db_name_list = ['testing','learning']
     sdic = {}
