@@ -139,3 +139,15 @@ class Rsi_predict_report(db.Model):
     target_rsi = db.Column(db.Float, nullable=True)
     target_close = db.Column(db.Float, nullable=True)
     trend = db.Column(db.String(4), nullable=True)
+
+
+class Hvlc_report(db.Model):
+    __tablename__ = 'hvlc_report'
+    id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False)
+    reached_date = db.Column(db.DateTime, nullable=False)
+    index = db.Column(db.String(20), nullable=False)
+    symbol = db.Column(db.String(10), nullable=False)
+    volchg = db.Column(db.Float, nullable=True)
+    pricechg = db.Column(db.Float, nullable=True)
+    vol_price_ratio = db.Column(db.Float, nullable=True)

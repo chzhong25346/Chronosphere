@@ -10,7 +10,7 @@ logger = logging.getLogger('main')
 def main(argv):
     time_start = time.time()
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:r:", ["help", "turnover=","line=","gap","rsi"])
+        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:r:v:", ["help", "turnover=","line=","gap","rsi","hvlc="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -32,6 +32,9 @@ def main(argv):
         elif o in ("-r", "--rsi"):
             market = a
             analysis(market, 'rsi')
+        elif o in ("-v", "--hvlc"):
+            market = a
+            analysis(market, 'hvlc')
         else:
             assert False, "unhandled option"
 
@@ -45,6 +48,7 @@ def usage():
     2.  -l/--line market(china/canada/usa) : Support and Resistance Line Analysis
     3.  -g/--gap market(china/canada/usa) : Gaps created with range
     4.  -r/--rsi market(china/canada/usa/eei) : RSI prediction
+    5.  -v/--hvlc market(china/canada/usa/eei) : High Volume Low Change
     """
     print(helps)
 

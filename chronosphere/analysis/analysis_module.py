@@ -3,7 +3,8 @@ from .turnover import tor_analysis
 from .lines import line_analysis
 from .gaps import gap_analysis
 from .rsi import rsi_prediction
-logger = logging.getLogger('main.turnover')
+from .hvlc import hvlc_report
+logger = logging.getLogger('main.analysis_module')
 
 
 def analysis_hub(type, sdic=None, s=None):
@@ -19,3 +20,6 @@ def analysis_hub(type, sdic=None, s=None):
     elif type == 'rsi':
         logger.info('Run Task: [RSI Prediction]')
         rsi_prediction(sdic)
+    elif type == 'hvlc':
+        logger.info('Run Task: [High Volume Low Change]')
+        hvlc_report(sdic)
