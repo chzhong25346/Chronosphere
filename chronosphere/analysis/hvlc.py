@@ -60,14 +60,15 @@ def hvlc_report(sdic):
                 low_date = df_after_reached['low'].idxmin()
                 high_price = df_after_reached['high'].max()
                 low_price = df_after_reached['low'].min()
+                lowest_close_date = df_after_reached['close'].idxmin()
 
                 # Latest v/p ratio
                 latest_vol_price_ratio = df_after_reached.iloc[-1]['vol_price_ratio']
 
-                # Today can't be highest/lowest date in reached range
+                # Today can't be highest/lowest and lowest close date in reached range
                 if (latest_close < high_price and latest_close > low_price
                     and latest_date > low_date and latest_date > high_date
-                    and latest_vol_price_ratio > 100):
+                    and latest_date > lowest_close_date and latest_vol_price_ratio > 100):
                     hvlc_date = df_after_reached.iloc[-1]
                     try:
                         # Remove existing record
