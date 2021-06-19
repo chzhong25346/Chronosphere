@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import timedelta
 from ..models import Index, Quote, Quote_CSI300, Hvlc_report, Rsi_predict_report
 from ..utils.utils import gen_id
+from stockstats import StockDataFrame
 logger = logging.getLogger('main.hvlc')
 
 def hvlc_report(sdic):
@@ -44,6 +45,23 @@ def hvlc_report(sdic):
                 latest_high = df_latest['high']
                 latest_low = df_latest['low']
 
+                # latest RSI >= 70 check
+                pd.set_option('mode.chained_assignment',None)
+                # Calculate RSI-14
+                df = StockDataFrame.retype(df)
+                df['rsi_14'] = df['rsi_14']
+                # DF clearning
+                df = df[(df != 0).all(1)]
+                df.dropna(inplace=True)
+                over_rsi70 = False
+                for index, row in df[::-1].iterrows():
+                    if row['rsi_14'] >= 70:
+                        over_rsi70 = True
+                        break
+                    elif row['rsi_14'] <= 30:
+                        over_rsi70 = False
+                        break
+
                 avg_vol = average_volume(df,90)
 
                 # Volume and Price change in percentage
@@ -68,7 +86,8 @@ def hvlc_report(sdic):
                 # Today can't be highest/lowest and lowest close date in reached range
                 if (latest_close < high_price and latest_close > low_price
                     and latest_date > low_date and latest_date > high_date
-                    and latest_date > lowest_close_date and latest_vol_price_ratio > 100):
+                    and latest_date > lowest_close_date and latest_vol_price_ratio > 100
+                    and over_rsi70 != True):
                     hvlc_date = df_after_reached.iloc[-1]
                     try:
                         # Remove existing record
