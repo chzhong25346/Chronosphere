@@ -2,8 +2,7 @@ import logging
 import pandas as pd
 from datetime import timedelta
 from ..models import Index, Quote, Quote_CSI300, Hvlc_report, Rsi_predict_report
-from ..utils.utils import gen_id
-from stockstats import StockDataFrame
+from ..utils.utils import gen_id, latest_over_rsi70
 logger = logging.getLogger('main.hvlc')
 
 def hvlc_report(sdic):
@@ -22,6 +21,12 @@ def hvlc_report(sdic):
                     Rsi_predict_report.target_rsi <=31).statement, s_l.bind)
             tickers = rsi30_rpr['symbol'].tolist()
 
+            # Get HVLC tickers list:
+            hvlc_r = pd.read_sql(s_l.query(Hvlc_report).
+                    filter(Hvlc_report.index == dbname).statement, s_l.bind)
+            hvlc_tickers = hvlc_r['symbol'].tolist()
+
+            # -------------------- HVLC report -----------------------
             for ticker in tickers:
                 if dbname == 'csi300':
                     df = pd.read_sql(s.query(Quote_CSI300).\
@@ -45,22 +50,7 @@ def hvlc_report(sdic):
                 latest_high = df_latest['high']
                 latest_low = df_latest['low']
 
-                # latest RSI >= 70 check
-                pd.set_option('mode.chained_assignment',None)
-                # Calculate RSI-14
-                df = StockDataFrame.retype(df)
-                df['rsi_14'] = df['rsi_14']
-                # DF clearning
-                df = df[(df != 0).all(1)]
-                df.dropna(inplace=True)
-                over_rsi70 = False
-                for index, row in df[::-1].iterrows():
-                    if row['rsi_14'] >= 70:
-                        over_rsi70 = True
-                        break
-                    elif row['rsi_14'] <= 30:
-                        over_rsi70 = False
-                        break
+                over_rsi70 = latest_over_rsi70(df)
 
                 avg_vol = average_volume(df,90)
 
@@ -108,6 +98,38 @@ def hvlc_report(sdic):
                         logger.info("HVLC found - (%s, %s)" % (dbname, ticker))
                     except:
                         pass
+
+            # -------------------- HVLC remove ----------------------------------
+            for ticker in hvlc_tickers:
+                if dbname == 'csi300':
+                    df = pd.read_sql(s.query(Quote_CSI300).\
+                        filter(Quote_CSI300.symbol == ticker).\
+                        statement, s.bind, index_col='date').sort_index()
+                else:
+                    df = pd.read_sql(s.query(Quote).\
+                        filter(Quote.symbol == ticker).\
+                        statement, s.bind, index_col='date').sort_index()
+
+                # quote df
+                df = df[(df != 0).all(1)]
+                df = df.sort_index(ascending=True).last('52w').drop(columns=['id'])
+
+                over_rsi70 = latest_over_rsi70(df)
+
+                # Clean up if rsi >= 70 in recent min_period
+                if over_rsi70 == True:
+                    record = s_l.query(Hvlc_report).filter(Hvlc_report.symbol == ticker,
+                                                  Hvlc_report.index == dbname).first()
+                    try:
+                        if record:
+                            s_l.delete(record)
+                            s_l.commit()
+                            logger.info("HVLC deleted - (%s, %s)" % (dbname, ticker))
+                    except:
+                        pass
+
+
+
 
 
 

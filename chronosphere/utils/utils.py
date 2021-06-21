@@ -1,6 +1,8 @@
 import hashlib
 import logging
 import re
+import pandas as pd
+from stockstats import StockDataFrame
 logger = logging.getLogger('main.util')
 
 
@@ -46,3 +48,20 @@ def distance_date(items, pivot, distance):
         return min(items, key=lambda x: abs(x - pivot))
     elif distance == "farest":
         return max(items, key=lambda x: abs(x - pivot))
+
+
+def latest_over_rsi70(df):
+    # latest RSI >= 70 check
+    pd.set_option('mode.chained_assignment',None)
+    # Calculate RSI-14
+    df = StockDataFrame.retype(df)
+    df['rsi_14'] = df['rsi_14']
+    # DF clearning
+    df = df[(df != 0).all(1)]
+    df.dropna(inplace=True)
+    over_rsi70 = False
+    for index, row in df[::-1].iterrows():
+        if row['rsi_14'] >= 70:
+            return True
+        elif row['rsi_14'] <= 30:
+            return False
