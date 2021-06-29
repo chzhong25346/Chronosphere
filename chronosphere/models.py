@@ -151,3 +151,12 @@ class Hvlc_report(db.Model):
     volchg = db.Column(db.Float, nullable=True)
     pricechg = db.Column(db.Float, nullable=True)
     vol_price_ratio = db.Column(db.Float, nullable=True)
+
+
+class Ublb_cross(db.Model):
+    __tablename__ = 'ublb_cross'
+    id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False)
+    reached_date = db.Column(db.DateTime, nullable=False)
+    index = db.Column(db.String(20), nullable=False)
+    symbol = db.Column(db.String(10), nullable=False)
