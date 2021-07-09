@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 from datetime import timedelta
-from ..models import Index, Quote, Quote_CSI300, Hvlc_report, Rsi_predict_report
+from ..models import Index, Quote, Quote_CSI300, Hvlc_report,  Ublb_cross
 from ..utils.utils import gen_id, latest_over_rsi70
 logger = logging.getLogger('main.hvlc')
 
@@ -15,13 +15,12 @@ def hvlc_report(sdic):
             logger.info("Start to process: %s" % dbname)
             # tickers = [r.symbol for r in s.query(Index.symbol).distinct()]
 
-            # Get Rsi_predict_report
-            rsi30_rpr = pd.read_sql(s_l.query(Rsi_predict_report).
-                    filter(Rsi_predict_report.index == dbname,
-                    Rsi_predict_report.target_rsi <=31).statement, s_l.bind)
-            tickers = rsi30_rpr['symbol'].tolist()
+            # Get UBLB report
+            ublb_cross = pd.read_sql(s_l.query(Ublb_cross).
+                    filter(Ublb_cross.index == dbname).statement, s_l.bind)
+            tickers = ublb_cross['symbol'].tolist()
 
-            # Get HVLC tickers list:
+            # Get existing HVLC tickers list:
             hvlc_r = pd.read_sql(s_l.query(Hvlc_report).
                     filter(Hvlc_report.index == dbname).statement, s_l.bind)
             hvlc_tickers = hvlc_r['symbol'].tolist()
@@ -40,7 +39,7 @@ def hvlc_report(sdic):
                 # Latest
                 df = df[(df != 0).all(1)]
                 df = df.sort_index(ascending=True).last('52w').drop(columns=['id'])
-                reached_date = rsi30_rpr.loc[rsi30_rpr['symbol'] == ticker]['reached_date'].iloc[-1]
+                reached_date = ublb_cross.loc[ublb_cross['symbol'] == ticker]['date'].iloc[-1]
 
                 # Latest day info
                 df_latest = df.iloc[-1]

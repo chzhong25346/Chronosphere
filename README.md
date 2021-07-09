@@ -1,4 +1,4 @@
-# Chronosphere 
+# Chronosphere
 
 You are aware, ja, of my Chronosphere, a device which is capable of moving matter through time and through space!
 - Professor Einstein
@@ -24,36 +24,23 @@ What things you need to install the software and how to install them
 
 ```
 python3.5+
-pandas, numpy, sqlalchemy, yaml, logger and etc.
-mysql installed separately
+Please see requirements and "pip install -r requirements.txt"
 ```
 
 
 ### Usage
 
-Update quotes
+1.  -t/--turnover market(china/canada/usa) : Turnover Ratio Analysis
+2.  -l/--line market(china/canada/usa) : Support and Resistance Line Analysis
+3.  -g/--gap market(china/canada/usa) : Gaps created with range
+4.  -r/--rsi market(china/canada/usa/eei) : RSI prediction
+5.  -v/--hvlc market(china/canada/usa/eei) : High Volume Low Change
+6.  -u/--ublb market(china/canada/usa/eei) : Up Band Lower Band Cross
 
-```
-TBD
-```
 
+### Tables
 
-
-Reporting
-```
-tbd
-```
-
-Simulate Trading
-```
-tbd
-```
-
-Email out trading result of the day
-```
-run.py -e
-```
-
+Index -- Quote --> RSI Predict --> RSI Predict Report(reached) --> UBLB Cross --> HVLC Report
 
 ## Authors
 
