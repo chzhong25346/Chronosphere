@@ -12,7 +12,7 @@ def tor_analysis(sdic):
     s_l = sdic['learning']
     s_f = sdic['financials']
     for dbname, s in sdic.items():
-        if dbname in ('tsxci','nasdaq100','sp100','csi300'):
+        if dbname in ('tsxci','nasdaq100','sp100','csi300','eei'):
             logger.info("Start to process: %s" % dbname)
             tickers = [r.symbol for r in s.query(Index.symbol).distinct()]
             for ticker in tickers:
@@ -39,7 +39,6 @@ def tor_main(ticker, dbname, s, s_f):
         shares_os = s_f.query(Shares_outstanding).get(ticker+'.TO')
     else:
         shares_os = s_f.query(Shares_outstanding).get(ticker)
-
     # Df ticker's report
     report = pd.read_sql(s.query(Report).\
             filter(Report.symbol == ticker).\
@@ -184,7 +183,6 @@ def tor_main(ticker, dbname, s, s_f):
             back = report.loc[bt_date - days_30:bt_date]
             forth = report.loc[bt_date:bt_date + days_30]
             candidate_dates = pd.concat([back, forth]).loc[(report['uptrend'] == True)|(report['bolling'] == 'buy')].index
-
             # Found Breakthrough date Candidates
             if not candidate_dates.empty:
                 # 4.2 Filter: Date > Year Low date and pick smallest, get new breakthrough date
