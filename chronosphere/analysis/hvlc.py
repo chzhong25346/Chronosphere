@@ -91,7 +91,8 @@ def hvlc_report(sdic):
                     and latest_date > low_date and latest_date > high_date
                     and latest_date > lowest_close_date and over_rsi70 != True
                     # HVLC Strategy in Learning db
-                    and (vp_ratio_low <= vp_rank_ratio <= vp_ratio_high or (vr_low <= v_rank <= vr_high and pr_low <= p_rank <= pr_high))
+                    and ((vp_ratio_low <= vp_rank_ratio <= vp_ratio_high and vr_low <= v_rank <= vr_high)
+                     or (vr_low <= v_rank <= vr_high and pr_low <= p_rank <= pr_high))
                     ):
 
                     hvlc_date = df_after_reached.iloc[-1]
