@@ -156,7 +156,18 @@ class Hvlc_report(db.Model):
 class Ublb_cross(db.Model):
     __tablename__ = 'ublb_cross'
     id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)
-    date = db.Column(db.DateTime, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, primary_key=True)
     reached_date = db.Column(db.DateTime, nullable=False)
     index = db.Column(db.String(20), nullable=False)
     symbol = db.Column(db.String(10), nullable=False)
+
+
+class Hvlc_strategy(db.Model):
+    __tablename__ = 'hvlc_strategy'
+    date = db.Column(db.DateTime, nullable=False, primary_key=True)
+    vp_ratio_low = db.Column(db.Float, nullable=True)
+    vp_ratio_high = db.Column(db.Float, nullable=True)
+    vr_low = db.Column(db.Float, nullable=True)
+    vr_high = db.Column(db.Float, nullable=True)
+    pr_low = db.Column(db.Float, nullable=True)
+    pr_high = db.Column(db.Float, nullable=True)
