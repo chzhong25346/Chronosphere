@@ -171,3 +171,17 @@ class Hvlc_strategy(db.Model):
     vr_high = db.Column(db.Float, nullable=True)
     pr_low = db.Column(db.Float, nullable=True)
     pr_high = db.Column(db.Float, nullable=True)
+
+
+class Hvlc_report_history(db.Model):
+    __tablename__ = 'hvlc_report_history'
+    id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)
+    symbol = db.Column(db.String(10), nullable=False)
+    index = db.Column(db.String(20), nullable=False)
+    delete_date = db.Column(db.DateTime, nullable=False)
+    hvlc_date = db.Column(db.DateTime, nullable=False)
+    reached_date = db.Column(db.DateTime, nullable=False)
+    volchg = db.Column(db.Float, nullable=True)
+    pricechg = db.Column(db.Float, nullable=True)
+    vol_price_ratio = db.Column(db.Float, nullable=True)
+    record_rsi = db.Column(db.Float, nullable=True)

@@ -1,8 +1,8 @@
 import logging
 import pandas as pd
-from datetime import timedelta
+from datetime import timedelta, date
 from ..models import Index, Quote, Quote_CSI300, Hvlc_report, Ublb_cross,\
-Hvlc_strategy
+Hvlc_strategy, Hvlc_report_history
 from ..utils.utils import gen_id, latest_over_rsi70
 logger = logging.getLogger('main.hvlc')
 
@@ -11,6 +11,7 @@ def hvlc_report(sdic):
     s_l = sdic['learning']
     Hvlc_report.__table__.create(s_l.get_bind(), checkfirst=True)
     Hvlc_strategy.__table__.create(s_l.get_bind(), checkfirst=True)
+    Hvlc_report_history.__table__.create(s_l.get_bind(), checkfirst=True)
 
     for dbname, s in sdic.items():
         if dbname in ('testing','tsxci','nasdaq100','sp100','csi300','eei'):
@@ -136,13 +137,29 @@ def hvlc_report(sdic):
 
                 # Clean up if rsi >= 70 in recent min_period
                 if over_rsi70 == True:
+                    rsi_now = 70
+                    # HVLC record
                     record = s_l.query(Hvlc_report).filter(Hvlc_report.symbol == ticker,
                                                   Hvlc_report.index == dbname).first()
+                    # HVLC history record
+                    his_record = {'id': gen_id(record.symbol+record.index+str(date.today())),
+                              'index': record.symbol,
+                              'symbol': record.index,
+                              'delete_date':date.today(),
+                              'hvlc_date':record.date,
+                              'reached_date':record.reached_date,
+                              'volchg':record.volchg,
+                              'pricechg':record.pricechg,
+                              'vol_price_ratio':record.vol_price_ratio,
+                              'record_rsi':rsi_now}
                     try:
                         if record:
                             s_l.delete(record)
                             s_l.commit()
                             logger.info("HVLC deleted - (%s, %s)" % (dbname, ticker))
+                            s_l.add(Hvlc_report_history(**his_record))
+                            s_l.commit()
+                            logger.info("HVLC history added - (%s, %s)" % (dbname, ticker))
                     except:
                         pass
 
