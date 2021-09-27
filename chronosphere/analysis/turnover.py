@@ -19,9 +19,6 @@ def tor_analysis(sdic):
             # for ticker in ['000671.SZ']:
                 try:
                     tdic = tor_main(ticker, dbname, s, s_f)
-                except:
-                    pass
-                if tdic:
                     tdic.update({'id':gen_id(ticker+dbname+str(tdic['date'])),
                                 'index':dbname})
                     try:
@@ -31,6 +28,8 @@ def tor_analysis(sdic):
                     except Exception as e:
                         s_l.rollback()
                         logger.error("%s - (%s, %s)" % (type(e).__name__, dbname, ticker))
+                except:
+                    pass
 
 
 def tor_main(ticker, dbname, s, s_f):
