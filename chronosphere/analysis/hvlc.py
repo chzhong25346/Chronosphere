@@ -47,76 +47,78 @@ def hvlc_report(sdic):
                     df = pd.read_sql(s.query(Quote).\
                         filter(Quote.symbol == ticker).\
                         statement, s.bind, index_col='date').sort_index()
+                try:
+                    # Latest
+                    df = df[(df != 0).all(1)]
+                    df = df.sort_index(ascending=True).last('2y').drop(columns=['id'])
 
-                # Latest
-                df = df[(df != 0).all(1)]
-                df = df.sort_index(ascending=True).last('2y').drop(columns=['id'])
+                    # find reached date in ublb cross
+                    reached_date = ublb_cross.loc[ublb_cross['symbol'] == ticker]['date'].iloc[-1]
 
-                # find reached date in ublb cross
-                reached_date = ublb_cross.loc[ublb_cross['symbol'] == ticker]['date'].iloc[-1]
+                    # Latest day info
+                    df_latest = df.iloc[-1]
+                    latest_date = df_latest.name
+                    latest_close = df_latest['close']
+                    latest_open = df_latest['open']
+                    latest_high = df_latest['high']
+                    latest_low = df_latest['low']
 
-                # Latest day info
-                df_latest = df.iloc[-1]
-                latest_date = df_latest.name
-                latest_close = df_latest['close']
-                latest_open = df_latest['open']
-                latest_high = df_latest['high']
-                latest_low = df_latest['low']
+                    over_rsi70 = latest_over_rsi70(df)
 
-                over_rsi70 = latest_over_rsi70(df)
+                    # avg_vol = average_volume(df,90)
 
-                # avg_vol = average_volume(df,90)
+                    # Volume and Price change in percentage
+                    # df['volchg'] = round((df['volume']/avg_vol -1)*100,2)
+                    # df['pricechg'] = round(abs((df['close']/df['open'] -1)*100),2)
 
-                # Volume and Price change in percentage
-                # df['volchg'] = round((df['volume']/avg_vol -1)*100,2)
-                # df['pricechg'] = round(abs((df['close']/df['open'] -1)*100),2)
+                    # No price change, reset to 0.01 in order to silence noise
+                    # df.loc[df['pricechg'] == 0, 'pricechg'] = 0.01
+                    # df['vol_price_ratio'] = round(df['volchg']/df['pricechg'],2)
 
-                # No price change, reset to 0.01 in order to silence noise
-                # df.loc[df['pricechg'] == 0, 'pricechg'] = 0.01
-                # df['vol_price_ratio'] = round(df['volchg']/df['pricechg'],2)
+                    vp_rank_ratio, v_rank, p_rank = _get_vp_rank(df, 99)
 
-                vp_rank_ratio, v_rank, p_rank = _get_vp_rank(df, 99)
+                    # Slice range after reached date
+                    df_after_reached = df.loc[reached_date:]
+                    high_date = df_after_reached['high'].idxmax()
+                    low_date = df_after_reached['low'].idxmin()
+                    high_price = df_after_reached['high'].max()
+                    low_price = df_after_reached['low'].min()
+                    lowest_close_date = df_after_reached['close'].idxmin()
+                    # Latest v/p ratio
+                    # latest_vol_price_ratio = df_after_reached.iloc[-1]['vol_price_ratio']
 
-                # Slice range after reached date
-                df_after_reached = df.loc[reached_date:]
-                high_date = df_after_reached['high'].idxmax()
-                low_date = df_after_reached['low'].idxmin()
-                high_price = df_after_reached['high'].max()
-                low_price = df_after_reached['low'].min()
-                lowest_close_date = df_after_reached['close'].idxmin()
-                # Latest v/p ratio
-                # latest_vol_price_ratio = df_after_reached.iloc[-1]['vol_price_ratio']
+                    # Today can't be highest/lowest and lowest close date in reached range and should be in range of strategy
+                    if (latest_close < high_price and latest_close > low_price
+                        and latest_date > low_date and latest_date > high_date
+                        and latest_date > lowest_close_date and over_rsi70 != True
+                        # HVLC Strategy in Learning db
+                        and ((vp_ratio_low <= vp_rank_ratio <= vp_ratio_high and vr_low <= v_rank <= vr_high)
+                         or (vr_low <= v_rank <= vr_high and pr_low <= p_rank <= pr_high))
+                        ):
 
-                # Today can't be highest/lowest and lowest close date in reached range and should be in range of strategy
-                if (latest_close < high_price and latest_close > low_price
-                    and latest_date > low_date and latest_date > high_date
-                    and latest_date > lowest_close_date and over_rsi70 != True
-                    # HVLC Strategy in Learning db
-                    and ((vp_ratio_low <= vp_rank_ratio <= vp_ratio_high and vr_low <= v_rank <= vr_high)
-                     or (vr_low <= v_rank <= vr_high and pr_low <= p_rank <= pr_high))
-                    ):
+                        hvlc_date = df_after_reached.iloc[-1]
 
-                    hvlc_date = df_after_reached.iloc[-1]
-
-                    try:
-                        # Remove existing record
-                        s_l.query(Hvlc_report).filter(Hvlc_report.symbol == ticker,
-                                                      Hvlc_report.index == dbname).delete()
-                        s_l.commit()
-                        record = {'id': gen_id(ticker+dbname+str(reached_date)+str(latest_date)),
-                                  'date': latest_date,
-                                  'reached_date': reached_date,
-                                  'index': dbname,
-                                  'symbol': ticker,
-                                  'volchg': v_rank,
-                                  'pricechg' : p_rank,
-                                  'vol_price_ratio' : vp_rank_ratio
-                                  }
-                        s_l.add(Hvlc_report(**record))
-                        s_l.commit()
-                        logger.info("HVLC found - (%s, %s)" % (dbname, ticker))
-                    except:
-                            pass
+                        try:
+                            # Remove existing record
+                            s_l.query(Hvlc_report).filter(Hvlc_report.symbol == ticker,
+                                                          Hvlc_report.index == dbname).delete()
+                            s_l.commit()
+                            record = {'id': gen_id(ticker+dbname+str(reached_date)+str(latest_date)),
+                                      'date': latest_date,
+                                      'reached_date': reached_date,
+                                      'index': dbname,
+                                      'symbol': ticker,
+                                      'volchg': v_rank,
+                                      'pricechg' : p_rank,
+                                      'vol_price_ratio' : vp_rank_ratio
+                                      }
+                            s_l.add(Hvlc_report(**record))
+                            s_l.commit()
+                            logger.info("HVLC found - (%s, %s)" % (dbname, ticker))
+                        except:
+                                pass
+                except:
+                    pass
 
             # -------------------- HVLC remove ----------------------------------
             for ticker in hvlc_tickers:
