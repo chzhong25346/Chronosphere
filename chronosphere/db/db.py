@@ -15,7 +15,7 @@ class Db():
         self.host = object.DB_HOST
         self.db_name =  object.DB_NAME
         self.engine = create_engine('mysql://{0}:{1}@{2}:{3}/{4}?charset=utf8'
-                        .format(self.user, self.pwd, self.host, self.port, self.db_name))
+                        .format(self.user, self.pwd, self.host, self.port, self.db_name), pool_pre_ping=True)
 
     Model = declarative_base()
     Column = Column
