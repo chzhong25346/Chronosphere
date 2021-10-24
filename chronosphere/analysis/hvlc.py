@@ -137,6 +137,14 @@ def hvlc_report(sdic):
 
                 over_rsi70 = latest_over_rsi70(df)
 
+                # Remove
+                hvlc_r = s_l.query(Hvlc_report).filter(Hvlc_report.symbol == ticker,
+                                              Hvlc_report.index == dbname).first()
+                df_latest = df.iloc[-1]
+                latest_close = df_latest['close'].item()
+                hvlc_close = df.loc[hvlc_r.date]['close']
+                chg_since_hvlc = round((latest_close/hvlc_close-1)*100,2)
+
                 # Clean up if rsi >= 70 in recent min_period
                 if over_rsi70 == True:
                     rsi_now = 70
@@ -154,16 +162,32 @@ def hvlc_report(sdic):
                               'pricechg':record.pricechg,
                               'vol_price_ratio':record.vol_price_ratio,
                               'record_rsi':rsi_now}
-                    try:
-                        if record:
-                            s_l.delete(record)
-                            s_l.commit()
-                            logger.info("HVLC deleted - (%s, %s)" % (dbname, ticker))
-                            s_l.add(Hvlc_report_history(**his_record))
-                            s_l.commit()
-                            logger.info("HVLC history added - (%s, %s)" % (dbname, ticker))
-                    except:
-                        pass
+                elif chg_since_hvlc <= -10:
+                    rsi_now = 30
+                    # HVLC record
+                    record = s_l.query(Hvlc_report).filter(Hvlc_report.symbol == ticker,
+                                                  Hvlc_report.index == dbname).first()
+                    # HVLC history record
+                    his_record = {'id': gen_id(record.symbol+record.index+str(date.today())),
+                              'index': record.symbol,
+                              'symbol': record.index,
+                              'delete_date':date.today(),
+                              'hvlc_date':record.date,
+                              'reached_date':record.reached_date,
+                              'volchg':record.volchg,
+                              'pricechg':record.pricechg,
+                              'vol_price_ratio':record.vol_price_ratio,
+                              'record_rsi':rsi_now}
+                try:
+                    if record:
+                        s_l.delete(record)
+                        s_l.commit()
+                        logger.info("HVLC deleted - (%s, %s)" % (dbname, ticker))
+                        s_l.add(Hvlc_report_history(**his_record))
+                        s_l.commit()
+                        logger.info("HVLC history added - (%s, %s)" % (dbname, ticker))
+                except:
+                    pass
 
 
 def average_volume(df, span):
