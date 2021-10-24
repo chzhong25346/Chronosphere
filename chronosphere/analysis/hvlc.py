@@ -36,7 +36,7 @@ def hvlc_report(sdic):
             vr_high = hvlc_strategy.vr_high
             pr_low = hvlc_strategy.pr_low
             pr_high = hvlc_strategy.pr_high
-
+            
             # ---- HVLC report -------Iterate UBLB cross tickers----------------
             for ticker in ublb_tickers:
                 if dbname == 'csi300':
@@ -162,6 +162,17 @@ def hvlc_report(sdic):
                               'pricechg':record.pricechg,
                               'vol_price_ratio':record.vol_price_ratio,
                               'record_rsi':rsi_now}
+                    try:
+                        if record:
+                            s_l.delete(record)
+                            s_l.commit()
+                            logger.info("HVLC deleted - (%s, %s)" % (dbname, ticker))
+                            s_l.add(Hvlc_report_history(**his_record))
+                            s_l.commit()
+                            logger.info("HVLC history added - (%s, %s)" % (dbname, ticker))
+                    except:
+                        pass
+
                 elif chg_since_hvlc <= -10:
                     rsi_now = 30
                     # HVLC record
@@ -178,16 +189,16 @@ def hvlc_report(sdic):
                               'pricechg':record.pricechg,
                               'vol_price_ratio':record.vol_price_ratio,
                               'record_rsi':rsi_now}
-                try:
-                    if record:
-                        s_l.delete(record)
-                        s_l.commit()
-                        logger.info("HVLC deleted - (%s, %s)" % (dbname, ticker))
-                        s_l.add(Hvlc_report_history(**his_record))
-                        s_l.commit()
-                        logger.info("HVLC history added - (%s, %s)" % (dbname, ticker))
-                except:
-                    pass
+                    try:
+                        if record:
+                            s_l.delete(record)
+                            s_l.commit()
+                            logger.info("HVLC deleted - (%s, %s)" % (dbname, ticker))
+                            s_l.add(Hvlc_report_history(**his_record))
+                            s_l.commit()
+                            logger.info("HVLC history added - (%s, %s)" % (dbname, ticker))
+                    except:
+                        pass
 
 
 def average_volume(df, span):
