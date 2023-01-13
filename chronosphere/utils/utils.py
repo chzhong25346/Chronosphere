@@ -3,6 +3,7 @@ import logging
 import re
 import pandas as pd
 from stockstats import StockDataFrame
+import math
 logger = logging.getLogger('main.util')
 
 
@@ -65,3 +66,12 @@ def latest_over_rsi70(df):
             return True
         elif row['rsi_14'] <= 30:
             return False
+
+
+def millify(n):
+    millnames = ['',' Thousand',' Million',' Billion',' Trillion']
+    n = float(n)
+    millidx = max(0,min(len(millnames)-1,
+                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+
+    return '{:.0f}{}'.format(n / 10**(3 * millidx), millnames[millidx])

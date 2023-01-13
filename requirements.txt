@@ -1,4 +1,8 @@
-pandas==1.1.0
-SQLAlchemy==1.3.18
+pandas==1.3.5
+SQLAlchemy==1.4.44
 mysqlclient==2.0.1
 stockstats==0.3.0
+int_date==0.1.8
+html5lib==1.1
+yfinance==0.2.3
+PyYAML==6.0

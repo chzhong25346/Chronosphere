@@ -10,7 +10,7 @@ logger = logging.getLogger('main')
 def main(argv):
     time_start = time.time()
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:r:v:u:", ["help", "turnover=","line=","gap","rsi","hvlc=","ublb="])
+        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:r:v:u:s:", ["help", "turnover=","line=","gap","rsi","hvlc=","ublb=","screener="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -38,6 +38,9 @@ def main(argv):
         elif o in ("-u", "--ublb"):
             market = a
             analysis(market, 'ublb')
+        elif o in ("-s", "--screener"):
+            market = a
+            analysis(market, 'screener')
         else:
             assert False, "unhandled option"
 
@@ -53,6 +56,7 @@ def usage():
     4.  -r/--rsi market(china/canada/usa/eei) : RSI prediction
     5.  -v/--hvlc market(china/canada/usa/eei) : High Volume Low Change
     6.  -u/--ublb market(china/canada/usa/eei) : Up Band Lower Band Cross
+    7.  -s/--screener market(na) : Screener
     """
     print(helps)
 
@@ -67,6 +71,9 @@ def analysis(market, module):
         db_name_list = ['sp100','nasdaq100','financials','learning']
     elif market == 'eei':
         db_name_list = ['eei','financials','learning']
+    elif market == 'na':
+        db_name_list = ['tsxci','sp100','eei']
+        # db_name_list = ['tsxci']
     elif market == 'testing':
         db_name_list = ['testing','learning']
     sdic = {}
@@ -79,5 +86,8 @@ def analysis(market, module):
     analysis_hub(module, sdic=sdic)
 
     for name, s in sdic.items():
-        s.close()
-        logger.info("Session closed: '%s' " % s.bind.url.database)
+        try:
+            s.close()
+            logger.info("Session closed: '%s' " % s.bind.url.database)
+        except:
+            pass

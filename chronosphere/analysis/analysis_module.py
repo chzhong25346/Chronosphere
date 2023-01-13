@@ -5,6 +5,7 @@ from .gaps import gap_analysis
 from .rsi import rsi_prediction
 from .hvlc import hvlc_report
 from .ublb import ublb_cross_analysis
+from .screener import screener_analysis
 logger = logging.getLogger('main.analysis_module')
 
 
@@ -27,3 +28,6 @@ def analysis_hub(type, sdic=None, s=None):
     elif type == 'ublb':
         logger.info('Run Task: [Up Band Lower Band Cross]')
         ublb_cross_analysis(sdic)
+    elif type == 'screener':
+        logger.info('Run Task: [Screener]')
+        screener_analysis(sdic)
