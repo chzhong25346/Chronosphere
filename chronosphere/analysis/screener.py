@@ -20,7 +20,7 @@ def screener_analysis(sdic):
             picks_list = []
             for ticker in tickers:
             # for ticker in ['BNS']:
-                # logger.info("Collecting - (%s, %s)" % (dbname, ticker))
+                logger.info("Collecting - (%s, %s)" % (dbname, ticker))
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
