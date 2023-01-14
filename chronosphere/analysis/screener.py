@@ -18,9 +18,8 @@ def screener_analysis(sdic):
             # Get tickers
             tickers = [r.symbol for r in s.query(Index.symbol).distinct()]
             picks_list = []
-            for ticker in tickers:
-            # for ticker in ['BNS']:
-                logger.info("Collecting - (%s, %s)" % (dbname, ticker))
+            # for ticker in tickers:
+            for ticker in ['BNS']:
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
@@ -49,10 +48,14 @@ def screener_analysis(sdic):
                       de_ratio <= 50 and dividendYield >= 4 and payoutRatio >= 25 and\
                       beta5yMonthly <= 1:
                         picks_list.append(ticker)
+                    logger.info("Screening - (%s, %s)" % (dbname, ticker))
                 except:
+                    logger.info("Failed to collect - (%s, %s)" % (dbname, ticker))
                     pass
-            picks_dic.update({dbname:picks_list})
-            logger.info("Screener found - (%s, %s)" % (dbname, picks_list))
+
+            if len(picks_list) > 0:
+                picks_dic.update({dbname:picks_list})
+                logger.info("Screener found - (%s, %s)" % (dbname, picks_list))
     sendMail(Config, picks_dic)
 
 
