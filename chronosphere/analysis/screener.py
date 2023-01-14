@@ -18,8 +18,8 @@ def screener_analysis(sdic):
             # Get tickers
             tickers = [r.symbol for r in s.query(Index.symbol).distinct()]
             picks_list = []
-            # for ticker in tickers:
-            for ticker in ['BNS']:
+            for ticker in tickers:
+            # for ticker in ['BNS']:
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
