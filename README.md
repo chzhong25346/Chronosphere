@@ -36,6 +36,7 @@ Please see requirements and "pip install -r requirements.txt"
 4.  -r/--rsi market(china/canada/usa/eei) : RSI prediction
 5.  -v/--hvlc market(china/canada/usa/eei) : High Volume Low Change
 6.  -u/--ublb market(china/canada/usa/eei) : Up Band Lower Band Cross
+7.  -s/--screener market(na) : Screener
 
 
 ### Tables
