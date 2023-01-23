@@ -1,11 +1,11 @@
 import logging
+
 import pandas as pd
-from datetime import timedelta
-from ..models import Index, Quote, Quote_CSI300, Ublb_cross, Rsi_predict_report
-from ..utils.utils import millify
-from ..utils.config import Config
-from .email import sendMail
 import yfinance as yf
+
+from .email import sendMail
+from ..models import Index
+from ..utils.config import Config
 
 logger = logging.getLogger('main.screener')
 pd.set_option('mode.chained_assignment', None)
@@ -18,13 +18,18 @@ def screener_analysis(sdic):
             # Get tickers
             tickers = [r.symbol for r in s.query(Index.symbol).distinct()]
             picks_list = []
+
+            # Iterate tickers
             for ticker in tickers:
-            # for ticker in ['BNS']:
+            # for ticker in ['001227.SZ']:
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
                         keyStat = get_yahoo_keyStat(ticker+".TO")
                         # current_price = get_yahoo_finance_price(ticker+".TO")
+                    elif dbname == 'csi300':
+                        ticker = ticker.replace('SH', 'SS')
+                        keyStat = get_yahoo_keyStat(ticker)
                     else:
                         keyStat = get_yahoo_keyStat(ticker)
                         # current_price = get_yahoo_finance_price(ticker)
@@ -42,12 +47,18 @@ def screener_analysis(sdic):
                     beta5yMonthly = keyStat['beta5yMonthly']
                     marketCap = keyStat['mc']
 
-                    # print(eps,pe,pb,PExPB,de_ratio,dividendYield,payoutRatio,beta5yMonthly,marketCap)
+                    # print(dbname, eps,pe,pb,de_ratio,dividendYield,payoutRatio,beta5yMonthly,marketCap)
 
-                    if eps > 0 and pe <= 15 and pb <= 1.5 and PExPB <= 22.5 and\
-                      de_ratio <= 50 and dividendYield >= 4 and payoutRatio >= 25 and\
-                      beta5yMonthly <= 1:
+                    # Screener conditions
+                    # China
+                    if dbname == 'csi300' and eps > 0 and pe <= 15 and pb <= 1.5 and PExPB <= 22.5 and\
+                      de_ratio <= 50 and dividendYield >= 4 and payoutRatio >= 25:
                         picks_list.append(ticker)
+                    # Everywhere else
+                    elif eps > 0 and pe <= 15 and pb <= 1.5 and PExPB <= 22.5 and\
+                      de_ratio <= 50 and dividendYield >= 4 and payoutRatio >= 25 and beta5yMonthly <= 1:
+                        picks_list.append(ticker)
+
                     logger.info("Screening - (%s, %s)" % (dbname, ticker))
                 except:
                     logger.info("Failed to collect - (%s, %s)" % (dbname, ticker))
@@ -125,9 +136,12 @@ def get_yahoo_keyStat(ticker):
         except:
             dividendRate = 'NA'
         try:
-            forwardPE = tinfo['forwardPE']
+            if tinfo['forwardPE'] != None:
+                PE = tinfo['forwardPE']
+            else:
+                PE = tinfo['trailingPE']
         except:
-            forwardPE = 'NA'
+            PE = 'NA'
         try:
             DeltaDR_PE = round((float(dy)*100) - float(forwardPE),2)
         except:
@@ -180,7 +194,7 @@ def get_yahoo_keyStat(ticker):
                 'mc': mc,
                 'por':payoutRatio,
                 'dr': dividendRate,
-                'pe': forwardPE,
+                'pe': PE,
                 'deltaDR_PE': DeltaDR_PE,
                 'ebitdaMargins': ebitdaMargins,
                 'profitMargins': profitMargins,

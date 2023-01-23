@@ -1,8 +1,13 @@
-import getopt, sys, time, math, logging, logging.config
+import getopt
+import logging.config
+import math
+import sys
+import time
+
+from .analysis.analysis_module import analysis_hub
 from .db.db import Db
 from .utils.config import Config
-from .utils.utils import gen_id
-from .analysis.analysis_module import analysis_hub
+
 logging.config.fileConfig('chronosphere/log/logging.conf')
 logger = logging.getLogger('main')
 
@@ -73,7 +78,6 @@ def analysis(market, module):
         db_name_list = ['eei','financials','learning']
     elif market == 'na':
         db_name_list = ['tsxci','sp100','eei']
-        # db_name_list = ['tsxci']
     elif market == 'testing':
         db_name_list = ['testing','learning']
     sdic = {}
