@@ -98,10 +98,21 @@ def get_up_down_ratio(df):
     down_5y = len(df.last('60m')[df.last('60m')['close'] < latest_close])
     up_5y_ratio = int(round(up_5y/total_5y,2)*100)
     down_5y_ratio = int(round(down_5y/total_5y,2)*100)
-
-    return {'6m': round(up_6m_ratio/down_6m_ratio,2),
-            '1y': round(up_1y_ratio/down_1y_ratio,2),
-            '5y': round(up_5y_ratio/down_5y_ratio,2)
+    try:
+        sixm = up_6m_ratio / down_6m_ratio
+    except ZeroDivisionError:
+        sixm = -1
+    try:
+        oney = up_1y_ratio/down_1y_ratio
+    except ZeroDivisionError:
+        oney = -1
+    try:
+        fivey = up_5y_ratio/down_5y_ratio
+    except ZeroDivisionError:
+        fivey = -1
+    return {'6m': round(sixm,2),
+            '1y': round(oney,2),
+            '5y': round(fivey,2)
            }
 
 
