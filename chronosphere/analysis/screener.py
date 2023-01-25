@@ -13,7 +13,7 @@ pd.set_option('mode.chained_assignment', None)
 def screener_analysis(sdic):
     picks_dic = {}
     for dbname, s in sdic.items():
-        if dbname in ('tsxci','nasdaq100','sp100','csi300','eei'):
+        if dbname in ('tsxci','nasdaq100','sp100','csi300','eei','commodity'):
             logger.info("Start to process: %s" % dbname)
             # Get tickers
             tickers = [r.symbol for r in s.query(Index.symbol).distinct()]

@@ -58,10 +58,10 @@ def usage():
     1.  -t/--turnover market(china/canada/usa) : Turnover Ratio Analysis
     2.  -l/--line market(china/canada/usa) : Support and Resistance Line Analysis
     3.  -g/--gap market(china/canada/usa) : Gaps created with range
-    4.  -r/--rsi market(china/canada/usa/eei) : RSI prediction
-    5.  -v/--hvlc market(china/canada/usa/eei) : High Volume Low Change
-    6.  -u/--ublb market(china/canada/usa/eei) : Up Band Lower Band Cross
-    7.  -s/--screener market(na) : Screener
+    4.  -r/--rsi market(china/canada/usa/eei/commodity) : RSI prediction
+    5.  -v/--hvlc market(china/canada/usa/eei/commodity) : High Volume Low Change
+    6.  -u/--ublb market(china/canada/usa/eei/commodity) : Up Band Lower Band Cross
+    7.  -s/--screener market(na/commodity) : Screener
     """
     print(helps)
 
@@ -78,6 +78,8 @@ def analysis(market, module):
         db_name_list = ['eei','financials','learning']
     elif market == 'na':
         db_name_list = ['tsxci','sp100','eei']
+    elif market == 'commodity':
+        db_name_list = ['commodity','financials','learning']
     elif market == 'testing':
         db_name_list = ['testing','learning']
     sdic = {}
