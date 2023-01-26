@@ -120,6 +120,7 @@ def get_yahoo_keyStat(ticker):
     try:
         t = yf.Ticker(ticker)
         tinfo= t.info
+        tfinfo = t.fast_info
         bvps = tinfo['bookValue']
         ps_ratio = round(tinfo['priceToSalesTrailing12Months'],2)
         pb_ratio = round(tinfo['priceToBook'],2)
@@ -159,7 +160,7 @@ def get_yahoo_keyStat(ticker):
             DeltaDR_PE = 'NA'
         #marketCap
         try:
-            mc =  tinfo['marketCap']
+            mc =  tfinfo['marketCap']
         except:
             mc = 'NA'
         #Margins
