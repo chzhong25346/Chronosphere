@@ -1,11 +1,13 @@
+import json
 import logging
+import re
+import time
 
 import pandas as pd
+import requests
 import yfinance as yf
 
-from .email import sendMail
 from ..models import Index
-from ..utils.config import Config
 
 logger = logging.getLogger('main.screener')
 pd.set_option('mode.chained_assignment', None)
@@ -21,18 +23,16 @@ def screener_analysis(sdic):
 
             # Iterate tickers
             for ticker in tickers:
-            # for ticker in ['001227.SZ']:
+            # for ticker in ['CGX']:
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
-                        keyStat = get_yahoo_keyStat(ticker+".TO")
-                        # current_price = get_yahoo_finance_price(ticker+".TO")
+                        keyStat = get_keyStat(dbname, ticker+".TO")
                     elif dbname == 'csi300':
                         ticker = ticker.replace('SH', 'SS')
-                        keyStat = get_yahoo_keyStat(ticker)
+                        keyStat = get_keyStat(dbname, ticker)
                     else:
-                        keyStat = get_yahoo_keyStat(ticker)
-                        # current_price = get_yahoo_finance_price(ticker)
+                        keyStat = get_keyStat(dbname, ticker)
 
                     # Screener
                     ps_ratio = keyStat['ps']
@@ -40,7 +40,6 @@ def screener_analysis(sdic):
                     pb = keyStat['pb']
                     ps = keyStat['ps']
                     eps = keyStat['eps']
-                    PExPB = pe * pb
                     de_ratio = keyStat['de']
                     dividendYield = keyStat['dy']*100
                     payoutRatio = keyStat['por']
@@ -51,12 +50,12 @@ def screener_analysis(sdic):
 
                     # Screener conditions
                     # China
-                    if dbname == 'csi300' and eps > 0 and pe <= 15 and pb <= 1.5 and PExPB <= 22.5 and\
-                      de_ratio <= 50 and dividendYield >= 4 and payoutRatio >= 25:
+                    if dbname == 'csi300' and eps > 0 and pe <= 15 and pb <= 1.59 and\
+                      de_ratio <= 50 and dividendYield >= 3.9 and payoutRatio >= 25:
                         picks_list.append(ticker)
                     # Everywhere else
-                    elif eps > 0 and pe <= 15 and pb <= 1.5 and PExPB <= 22.5 and\
-                      de_ratio <= 50 and dividendYield >= 4 and payoutRatio >= 25 and beta5yMonthly <= 1:
+                    elif eps > 0 and pe <= 15 and pb <= 1.59 and\
+                      de_ratio <= 50 and dividendYield >= 3.9 and payoutRatio >= 25 and beta5yMonthly <= 1.2:
                         picks_list.append(ticker)
 
                     logger.info("Screening - (%s, %s)" % (dbname, ticker))
@@ -67,7 +66,7 @@ def screener_analysis(sdic):
             if len(picks_list) > 0:
                 picks_dic.update({dbname:picks_list})
                 logger.info("Screener found - (%s, %s)" % (dbname, picks_list))
-    sendMail(Config, picks_dic)
+    # sendMail(Config, picks_dic)
 
 
 def get_up_down_ratio(df):
@@ -116,92 +115,109 @@ def get_up_down_ratio(df):
            }
 
 
-def get_yahoo_keyStat(ticker):
+def get_keyStat(dbname, ticker):
+    t = yf.Ticker(ticker)
     try:
-        t = yf.Ticker(ticker)
-        tinfo= t.info
+        tinfo = t.info
+    except:
+        tinfo = None
+    try:
         tfinfo = t.fast_info
-        bvps = tinfo['bookValue']
-        ps_ratio = round(tinfo['priceToSalesTrailing12Months'],2)
-        pb_ratio = round(tinfo['priceToBook'],2)
-        eps =tinfo['trailingEps']
-        if tinfo['currentRatio'] == None:
-            cr = 1
-        else:
+    except:
+        tfinfo = None
+
+    if tinfo is not None and tfinfo is not None:
+        try:
+            bvps = tinfo['bookValue']
+        except:
+            bvps = None
+        try:
+            ps_ratio = round(tinfo['priceToSalesTrailing12Months'],2)
+        except:
+            ps_ratio = None
+        try:
+            pb_ratio = round(tinfo['priceToBook'],2)
+        except:
+            pb_ratio = None
+        try:
+            eps = tinfo['trailingEps']
+        except:
+            eps = None
+        try:
             cr = tinfo['currentRatio']
-
-        if tinfo['debtToEquity'] == None:
-            de_ratio = 50
-        else:
+        except:
+            cr = 1
+        try:
             de_ratio = tinfo['debtToEquity']
-
-        if tinfo['dividendYield'] == None:
-            dy = 0
-        else:
+        except:
+            de_ratio = 50
+        try:
             dy = tinfo['dividendYield']
+        except:
+            dy = None
         try:
             payoutRatio = round(tinfo['payoutRatio']*100,2)
         except:
-            payoutRatio = 'NA'
+            payoutRatio = None
         try:
             dividendRate = tinfo['dividendRate']
         except:
-            dividendRate = 'NA'
+            dividendRate = None
         try:
             if tinfo['forwardPE'] != None:
                 PE = tinfo['forwardPE']
             else:
                 PE = tinfo['trailingPE']
         except:
-            PE = 'NA'
+            PE = None
         try:
             DeltaDR_PE = round((float(dy)*100) - float(forwardPE),2)
         except:
-            DeltaDR_PE = 'NA'
+            DeltaDR_PE = None
         #marketCap
         try:
-            mc =  tfinfo['marketCap']
+            mc =  tfinfo['market_cap']
         except:
-            mc = 'NA'
+            mc = None
         #Margins
         try:
             ebitdaMargins = round(tinfo['ebitdaMargins']*100,2)
         except:
-            ebitdaMargins = 'NA'
+            ebitdaMargins = None
         try:
             profitMargins = round(tinfo['profitMargins']*100,2)
         except:
-            profitMargins = 'NA'
+            profitMargins = None
         try:
             grossMargins = round(tinfo['grossMargins']*100,2)
         except:
-            grossMargins = 'NA'
+            grossMargins = None
         try:
             operatingMargins = round(tinfo['operatingMargins']*100,2)
         except:
-            operatingMargins = 'NA'
+            operatingMargins = None
         #Growth
         try:
             earningsQuarterlyGrowth = round(tinfo['earningsQuarterlyGrowth']*100,2)
         except:
-            earningsQuarterlyGrowth = 'NA'
+            earningsQuarterlyGrowth = None
         try:
             revenueQuarterlyGrowth = round(tinfo['revenueGrowth']*100,2)
         except:
-            revenueQuarterlyGrowth = 'NA'
+            revenueQuarterlyGrowth = None
         #Beta
         try:
             beta5yMonthly = tinfo['beta']
         except:
-            beta5yMonthly = 1
+            beta5yMonthly = None
 
         data = {
-                'bvps': float(bvps),
-                'cr': float(cr),
-                'de': float(de_ratio),
-                'ps': float(ps_ratio),
-                'pb': float(pb_ratio),
-                'eps': float(eps),
+                'bvps': bvps,
+                'cr': cr,
+                'de': de_ratio,
+                'ps': ps_ratio,
+                'pb': pb_ratio,
+                'eps': eps,
                 'dy': dy,
                 'mc': mc,
                 'por':payoutRatio,
@@ -216,10 +232,36 @@ def get_yahoo_keyStat(ticker):
                 'revenueQuarterlyGrowth': revenueQuarterlyGrowth,
                 'beta5yMonthly':beta5yMonthly
                 }
-        return data
+        if dbname != 'csi300':
+            # Supplement for Stock Chart Summary
+            try:
+                scs = stockChartSummary(ticker)
 
-    except:
-        return None
+                if data['eps'] is None and scs['EPS'] not in ('','-'):
+                    data['eps'] = float(scs['EPS'])
+
+                if data['pe'] is None and scs['PERatio'] not in ('','-'):
+                    data['pe'] = float(scs['PERatio'])
+
+                if data['pb'] is None and scs['Price To Book'] not in ('','-'):
+                    data['pb'] = float(scs['Price To Book'])
+
+                if data['beta5yMonthly'] is None and scs['Beta60Month'] not in ('','-'):
+                    data['beta5yMonthly'] = float(scs['Beta60Month'])
+
+                if data['dy'] is None and scs['Dividend Yield'] not in ('','-'):
+                    data['dy'] = float(scs['Dividend Yield'])
+                else:
+                    data['dy'] = 0
+
+                if data['dr'] is None and scs['Dividend Yield'] not in ('','-'):
+                    data['dr'] = float(scs['Dividend Rate'])
+                else:
+                    data['dr'] = 0
+            except:
+                pass
+
+        return data
 
 
 def get_yahoo_finance_price(ticker):
@@ -229,3 +271,40 @@ def get_yahoo_finance_price(ticker):
         return round(data.iloc[-1]['Close'],2)
     except:
         return None
+
+def _get_headers():
+    return {"accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "accept-language": "en;q=0.9",
+            "cache-control": "no-cache",
+            "dnt": "1",
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "none",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
+            "user-agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
+
+def stockChartSummary(ticker):
+    if '-' in ticker:
+        ticker = ticker.replace('-', '%2F')
+    url = 'https://stockcharts.com/j-sum/sum?cmd=symsum&symbol={0}'.format(ticker)
+    try:
+        html = requests.get(url, headers=_get_headers()).text
+    except:
+        time.sleep(30)
+        html = requests.get(url, headers=_get_headers()).text
+    # Cleaning
+    try:
+        data = json.loads(html)
+        funda = data['fundamentals']
+        del funda['date']
+        # Oct 30, 2022
+        # funda.update(float({'SCTR':round(data['SCTR'],2)}))
+        # funda.update({'Annual Dividend Yield':data['yield']})
+        # funda.update({'Sector Name':data['sectorName']})
+        for key, item in funda.items():
+            funda[re.sub(r"(?<=[a-z])(?=[A-Z])", " ", key)] = funda.pop(key)
+        return funda
+    except:
+        pass
