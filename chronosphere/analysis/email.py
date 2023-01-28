@@ -1,12 +1,13 @@
-import smtplib, ssl
-import logging
-import yaml,os
-import sys
 import datetime as dt
+import logging
+import smtplib
+import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from dateutil import parser
+
 import pandas as pd
+from dateutil import parser
+
 logger = logging.getLogger('main.email')
 
 def sendMail(object, pick_dic):

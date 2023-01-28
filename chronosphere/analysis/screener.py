@@ -8,6 +8,8 @@ import requests
 import yfinance as yf
 
 from ..models import Index
+from .email import sendMail
+from ..utils.config import Config
 
 logger = logging.getLogger('main.screener')
 pd.set_option('mode.chained_assignment', None)
@@ -23,7 +25,7 @@ def screener_analysis(sdic):
 
             # Iterate tickers
             for ticker in tickers:
-            # for ticker in ['CGX']:
+            # for ticker in ['BNS']:
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
@@ -67,7 +69,6 @@ def screener_analysis(sdic):
                 picks_dic.update({dbname:picks_list})
                 logger.info("Screener found - (%s, %s)" % (dbname, picks_list))
     sendMail(Config, picks_dic)
-
 
 def get_up_down_ratio(df):
     df = df[(df != 0).all(1)]
@@ -144,11 +145,17 @@ def get_keyStat(dbname, ticker):
         except:
             eps = None
         try:
-            cr = tinfo['currentRatio']
+            if tinfo['currentRatio'] is not None:
+                cr = tinfo['currentRatio']
+            else:
+                cr = 1
         except:
             cr = 1
         try:
-            de_ratio = tinfo['debtToEquity']
+            if tinfo['debtToEquity'] is not None:
+                de_ratio = tinfo['debtToEquity']
+            else:
+                de_ratio = 50
         except:
             de_ratio = 50
         try:
@@ -232,32 +239,13 @@ def get_keyStat(dbname, ticker):
                 'revenueQuarterlyGrowth': revenueQuarterlyGrowth,
                 'beta5yMonthly':beta5yMonthly
                 }
+
         if dbname != 'csi300':
             # Supplement for Stock Chart Summary
             try:
                 scs = stockChartSummary(ticker)
-
-                if data['eps'] is None and scs['EPS'] not in ('','-'):
-                    data['eps'] = float(scs['EPS'])
-
-                if data['pe'] is None and scs['PERatio'] not in ('','-'):
-                    data['pe'] = float(scs['PERatio'])
-
-                if data['pb'] is None and scs['Price To Book'] not in ('','-'):
-                    data['pb'] = float(scs['Price To Book'])
-
                 if data['beta5yMonthly'] is None and scs['Beta60Month'] not in ('','-'):
                     data['beta5yMonthly'] = float(scs['Beta60Month'])
-
-                if data['dy'] is None and scs['Dividend Yield'] not in ('','-'):
-                    data['dy'] = float(scs['Dividend Yield'])
-                else:
-                    data['dy'] = 0
-
-                if data['dr'] is None and scs['Dividend Yield'] not in ('','-'):
-                    data['dr'] = float(scs['Dividend Rate'])
-                else:
-                    data['dr'] = 0
             except:
                 pass
 
