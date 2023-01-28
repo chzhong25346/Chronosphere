@@ -27,7 +27,7 @@ def screener_analysis(sdic):
             for ticker in tickers:
             # for ticker in ['BNS']:
                 try:
-                    # Key Stats and Current Price
+                        # Key Stats and Current Price
                     if dbname == "tsxci":
                         keyStat = get_keyStat(dbname, ticker+".TO")
                     elif dbname == 'csi300':
@@ -159,17 +159,20 @@ def get_keyStat(dbname, ticker):
         except:
             de_ratio = 50
         try:
-            dy = tinfo['dividendYield']
+            if tinfo['dividendYield'] is not None:
+                dy = tinfo['dividendYield']
+            else:
+                dy = 0
         except:
-            dy = None
+            dy = 0
         try:
-            payoutRatio = round(tinfo['payoutRatio']*100,2)
+            if tinfo['payoutRatio'] is not None:
+                payoutRatio = round(tinfo['payoutRatio']*100,2)
+            else:
+                payoutRatio = 0
         except:
-            payoutRatio = None
-        try:
-            dividendRate = tinfo['dividendRate']
-        except:
-            dividendRate = None
+            payoutRatio = 0
+
         try:
             if tinfo['forwardPE'] != None:
                 PE = tinfo['forwardPE']
@@ -228,7 +231,6 @@ def get_keyStat(dbname, ticker):
                 'dy': dy,
                 'mc': mc,
                 'por':payoutRatio,
-                'dr': dividendRate,
                 'pe': PE,
                 'deltaDR_PE': DeltaDR_PE,
                 'ebitdaMargins': ebitdaMargins,
