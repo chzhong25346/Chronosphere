@@ -12,6 +12,7 @@ from yahooquery import Ticker as yhqT
 from ..models import Index
 from .email import sendMail
 from ..utils.config import Config
+from ..utils.utils import get_smarter_session
 
 logger = logging.getLogger('main.screener')
 pd.set_option('mode.chained_assignment', None)
@@ -19,7 +20,7 @@ pd.set_option('mode.chained_assignment', None)
 def screener_analysis(sdic):
     picks_dic = {}
     for dbname, s in sdic.items():
-        if dbname in ('tsxci','nasdaq100','sp100','csi300','eei','commodity'):
+        if dbname in ('tsxci', 'nasdaq100', 'sp100', 'csi300', 'eei', 'commodity'):
             logger.info("Start to process: %s" % dbname)
             # Get tickers
             tickers = [r.symbol for r in s.query(Index.symbol).distinct()]
@@ -27,7 +28,7 @@ def screener_analysis(sdic):
 
             # Iterate tickers
             for ticker in tickers:
-            # for ticker in ['BNS']:
+            # for ticker in ['MFC']:
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
@@ -37,6 +38,8 @@ def screener_analysis(sdic):
                         ks = get_keyStat(dbname, ticker)
                     else:
                         ks = get_keyStat(dbname, ticker)
+
+                    # print(ks)
 
                     # Screener
                     pe = ks['pe']
@@ -65,6 +68,7 @@ def screener_analysis(sdic):
             if len(picks_list) > 0:
                 picks_dic.update({dbname: picks_list})
                 logger.info("Screener found - (%s, %s)" % (dbname, picks_list))
+    # print(picks_dic)
     sendMail(Config, picks_dic)
 
 def get_up_down_ratio(df):
@@ -115,7 +119,7 @@ def get_up_down_ratio(df):
 
 def get_keyStat(dbname, ticker):
     data = {}
-    t = yf.Ticker(ticker)
+    t = yf.Ticker(ticker, session=get_smarter_session())
     try:
         tinfo = t.info
     except:
@@ -312,7 +316,7 @@ def get_keyStat(dbname, ticker):
 
 def get_yahoo_finance_price(ticker):
     try:
-        t = yf.Ticker(ticker)
+        t = yf.Ticker(ticker, session=get_smarter_session())
         data = t.history(period="1day")
         return round(data.iloc[-1]['Close'],2)
     except:

@@ -1,9 +1,15 @@
 import hashlib
 import logging
-import re
-import pandas as pd
-from stockstats import StockDataFrame
 import math
+import re
+
+import pandas as pd
+import requests_cache
+from requests import Session
+from requests_cache import CacheMixin, SQLiteCache
+from requests_ratelimiter import LimiterMixin, MemoryQueueBucket
+from stockstats import StockDataFrame
+
 logger = logging.getLogger('main.util')
 
 
@@ -75,3 +81,17 @@ def millify(n):
                         int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
 
     return '{:.0f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
+
+
+# Yfinance Smarter scraping
+def get_smarter_session():
+    class CachedLimiterSession(CacheMixin, LimiterMixin, Session):
+        """ """
+    session = CachedLimiterSession(
+        per_second=0.9,
+        bucket_class=MemoryQueueBucket,
+        backend=SQLiteCache("yfinance.cache"),
+    )
+    session.headers['User-agent'] = 'my-program/1.0'
+    # session = requests_cache.CachedSession('yfinance.cache')
+    return session
