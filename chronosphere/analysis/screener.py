@@ -65,7 +65,7 @@ def screener_analysis(sdic):
             if len(picks_list) > 0:
                 picks_dic.update({dbname: picks_list})
                 logger.info("Screener found - (%s, %s)" % (dbname, picks_list))
-    # sendMail(Config, picks_dic)
+    sendMail(Config, picks_dic)
 
 def get_up_down_ratio(df):
     df = df[(df != 0).all(1)]
