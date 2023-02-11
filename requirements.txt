@@ -13,5 +13,6 @@ mysqlclient==2.0.1
 stockstats==0.3.0
 int_date==0.1.8
 html5lib==1.1
-yfinance==0.2.7
+yfinance==0.2.11
 PyYAML==6.0
+yahooquery~=2.3.0

@@ -62,15 +62,16 @@ def generate_html(d):
 
         {picked}<br>
 
-        <h6 > EPS > 0 <br>
-          PE <= 15 <br>
-          PB <= 1.5 <br>
-          PE*PB <= 22.5 <br>
-          DE ratio <= 50 <br>
-          Dividend Yield >= 4 <br>
-          Payou tRatio >= 25<br>
-          Beta 5y Monthly <= 1 <br>
-          market Cap >= 3B</h6>
+        <h6> EPS > 0 <br>
+          EPS > 0 <br>
+          EPS <= 15 <br>
+          P/B <= 1.59 <br>
+          P/S <= 2 <br>
+          D/E ratio <= 50 <br>
+          Dividend Yield >= 4.05 <br>
+          Payout Ratio >= 25<br>
+          Beta <= 1.2 <br>
+        </h6>
 
     </body>
     </html>
