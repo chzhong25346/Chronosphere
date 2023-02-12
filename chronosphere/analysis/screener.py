@@ -17,6 +17,7 @@ from ..utils.utils import get_smarter_session
 logger = logging.getLogger('main.screener')
 pd.set_option('mode.chained_assignment', None)
 
+
 def screener_analysis(sdic):
     picks_dic = {}
     for dbname, s in sdic.items():
@@ -28,7 +29,7 @@ def screener_analysis(sdic):
 
             # Iterate tickers
             for ticker in tickers:
-            # for ticker in ['MFC']:
+            # for ticker in ['GWO']:
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
@@ -70,6 +71,7 @@ def screener_analysis(sdic):
                 logger.info("Screener found - (%s, %s)" % (dbname, picks_list))
     # print(picks_dic)
     sendMail(Config, picks_dic)
+
 
 def get_up_down_ratio(df):
     df = df[(df != 0).all(1)]
@@ -302,11 +304,38 @@ def get_keyStat(dbname, ticker):
         except:
             pass
 
+    # Supplement from Local function query: get_query1_yfinance(ticker)
+    try:
+        fdata = get_query1_yfinance(ticker)
+        if fdata is not None:
+            # P/B
+            if 'priceToBook' in fdata:
+                data.update({'pb': fdata['priceToBook']})
+            # EPS
+            if 'epsTrailingTwelveMonths' in fdata:
+                data.update({'eps': fdata['epsTrailingTwelveMonths']})
+            elif 'epsForward' in fdata:
+                data.update({'eps': fdata['epsForward']})
+            elif 'epsCurrentYea' in fdata:
+                data.update({'eps': fdata['epsCurrentYea']})
+            # P/E
+            if 'trailingPE' in fdata:
+                data.update({'pe': fdata['trailingPE']})
+            elif 'forwardPE' in fdata:
+                data.update({'pe': fdata['forwardPE']})
+            # Dividend
+            if 'trailingAnnualDividendRate' in fdata:
+                data.update({'dr': fdata['trailingAnnualDividendRate']})
+            if 'trailingAnnualDividendYield' in fdata:
+                data.update({'dy': fdata['trailingAnnualDividendYield'] * 100})
+    except:
+        pass
+
     # Supplement from Calculation
         # EPS
         try:
             if 'pe' in data and 'eps' not in data:
-                eps = round(get_yahoo_finance_price(ticker) / data['pe'], 2)
+                eps = round(get_yahoo_finance_price(ticker, t) / data['pe'], 2)
                 data.update({'eps': eps})
         except:
             pass
@@ -314,9 +343,9 @@ def get_keyStat(dbname, ticker):
     return data
 
 
-def get_yahoo_finance_price(ticker):
+def get_yahoo_finance_price(ticker, t):
     try:
-        t = yf.Ticker(ticker, session=get_smarter_session())
+        # t = yf.Ticker(ticker, session=get_smarter_session())
         data = t.history(period="1day")
         return round(data.iloc[-1]['Close'],2)
     except:
@@ -356,5 +385,19 @@ def stockChartSummary(ticker):
         for key, item in funda.items():
             funda[re.sub(r"(?<=[a-z])(?=[A-Z])", " ", key)] = funda.pop(key)
         return funda
+    except:
+        pass
+
+
+def get_query1_yfinance(ticker):
+    url = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=" + ticker
+    try:
+        data = json.loads(requests.get(url, headers=_get_headers()).text)
+    except:
+        time.sleep(30)
+        data = requests.get(url, headers=_get_headers()).text
+    try:
+        fin_data = data['quoteResponse']['result'][0]
+        return fin_data
     except:
         pass
