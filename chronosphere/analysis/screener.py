@@ -29,7 +29,7 @@ def screener_analysis(sdic):
 
             # Iterate tickers
             for ticker in tickers:
-            # for ticker in ['GWO']:
+            # for ticker in ['MFI']:
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
@@ -235,39 +235,40 @@ def get_keyStat(dbname, ticker):
         yhqs = yhq.summary_detail[ticker]
     except:
         yhqs = None
-    # P/E
-    try:
-        if yhqs['trailingPE'] is None:
-            data.update({'pe': yhqs['forwardPE']})
-        else:
-            data.update({'pe': yhqs['trailingPE']})
-    except:
-        pass
-    # DR
-    try:
-        data.update({'dr': yhqs['dividendRate']})
-    except:
-        pass
-    # DY
-    try:
-        data.update({'dy': yhqs['dividendYield']})
-    except:
-        pass
-    # POR
-    try:
-        data.update({'por': round(yhqs['payoutRatio'] * 100, 2)})
-    except:
-        pass
-    # Beta
-    try:
-        data.update({'beta': yhqs['beta']})
-    except:
-        pass
-    # Price/sales
-    try:
-        data.update({'ps': yhqs['priceToSalesTrailing12Months']})
-    except:
-        pass
+    if yhqs is not None and tinfo is None:
+        # P/E
+        try:
+            if yhqs['trailingPE'] is None:
+                data.update({'pe': yhqs['forwardPE']})
+            else:
+                data.update({'pe': yhqs['trailingPE']})
+        except:
+            pass
+        # DR
+        try:
+            data.update({'dr': yhqs['dividendRate']})
+        except:
+            pass
+        # DY
+        try:
+            data.update({'dy': yhqs['dividendYield']})
+        except:
+            pass
+        # POR
+        try:
+            data.update({'por': round(yhqs['payoutRatio'] * 100, 2)})
+        except:
+            pass
+        # Beta
+        try:
+            data.update({'beta': yhqs['beta']})
+        except:
+            pass
+        # Price/sales
+        try:
+            data.update({'ps': yhqs['priceToSalesTrailing12Months']})
+        except:
+            pass
 
     # Supplement from Stock Chart Summary
     if dbname != 'csi300':
@@ -275,34 +276,35 @@ def get_keyStat(dbname, ticker):
             scs = stockChartSummary(ticker)
         except:
             scs = None
-        # Beta
-        try:
-            if 'beta' not in data and scs['Beta60Month'] not in ('', '-', '0.00', '0'):
-                data.update({'beta': float(scs['Beta60Month'])})
-        except:
-            pass
-        # EPS
-        try:
-            if 'eps' not in data and scs['EPS'] not in ('', '-'):
-                data.update({'eps': float(scs['EPS'])})
-        except:
-            pass
-        # Price/Book
-        try:
-            if 'pb' not in data and scs['PriceToBook'] not in ('', '-', '0.00', '0'):
-                data.update({'pb': float(scs['PriceToBook'])})
-        except:
-            pass
-        try:
-            if 'pb' not in data and scs['Price To Book '] not in ('', '-', '0.00', '0'):
-                data.update({'pb': float(scs['Price To Book '])})
-        except:
-            pass
-        try:
-            if 'pb' not in data and scs['Price To Book'] not in ('', '-', '0.00', '0'):
-                data.update({'pb': float(scs['Price To Book'])})
-        except:
-            pass
+        if tinfo is None and scs is not None:
+            # Beta
+            try:
+                if 'beta' not in data and scs['Beta60Month'] not in ('', '-', '0.00', '0'):
+                    data.update({'beta': float(scs['Beta60Month'])})
+            except:
+                pass
+            # EPS
+            try:
+                if 'eps' not in data and scs['EPS'] not in ('', '-'):
+                    data.update({'eps': float(scs['EPS'])})
+            except:
+                pass
+            # Price/Book
+            try:
+                if 'pb' not in data and scs['PriceToBook'] not in ('', '-', '0.00', '0'):
+                    data.update({'pb': float(scs['PriceToBook'])})
+            except:
+                pass
+            try:
+                if 'pb' not in data and scs['Price To Book '] not in ('', '-', '0.00', '0'):
+                    data.update({'pb': float(scs['Price To Book '])})
+            except:
+                pass
+            try:
+                if 'pb' not in data and scs['Price To Book'] not in ('', '-', '0.00', '0'):
+                    data.update({'pb': float(scs['Price To Book'])})
+            except:
+                pass
 
     # Supplement from Local function query: get_query1_yfinance(ticker)
     try:
@@ -333,13 +335,13 @@ def get_keyStat(dbname, ticker):
 
     # Supplement from Calculation
         # EPS
-        try:
-            if 'pe' in data and 'eps' not in data:
-                eps = round(get_yahoo_finance_price(ticker, t) / data['pe'], 2)
-                data.update({'eps': eps})
-        except:
-            pass
-
+        if tinfo is None:
+            try:
+                if 'pe' in data and 'eps' not in data:
+                    eps = round(get_yahoo_finance_price(ticker, t) / data['pe'], 2)
+                    data.update({'eps': eps})
+            except:
+                pass
     return data
 
 
