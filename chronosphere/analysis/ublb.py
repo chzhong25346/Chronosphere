@@ -14,7 +14,7 @@ def ublb_cross_analysis(sdic):
     Ublb_cross.__table__.create(s_l.get_bind(), checkfirst=True)
 
     for dbname, s in sdic.items():
-        if dbname in ('testing','tsxci','nasdaq100','sp100','csi300','eei','commodity'):
+        if dbname in ('testing', 'tsxci', 'nasdaq100', 'sp100', 'csi300', 'eei', 'commodity', 'market'):
             logger.info("Start to process: %s" % dbname)
 
             # Get Rsi_predict_report

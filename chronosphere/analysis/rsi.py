@@ -15,7 +15,7 @@ def rsi_prediction(sdic):
     Rsi_predict_report.__table__.create(s_l.get_bind(), checkfirst=True)
 
     for dbname, s in sdic.items():
-        if dbname in ('testing','tsxci','nasdaq100','sp100','csi300','eei','commodity'):
+        if dbname in ('testing', 'tsxci', 'nasdaq100', 'sp100', 'csi300', 'eei', 'commodity', 'market'):
             logger.info("Start to process: %s" % dbname)
             tickers = [r.symbol for r in s.query(Index.symbol).distinct()]
             for ticker in tickers:

@@ -80,6 +80,8 @@ def analysis(market, module):
         db_name_list = ['tsxci','sp100','eei']
     elif market == 'commodity':
         db_name_list = ['commodity','financials','learning']
+    elif market == 'market':
+        db_name_list = ['market','financials','learning']
     elif market == 'testing':
         db_name_list = ['testing','learning']
     sdic = {}
