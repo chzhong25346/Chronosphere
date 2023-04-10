@@ -126,10 +126,7 @@ def get_keyStat(dbname, ticker):
         tinfo = t.info
     except:
         tinfo = None
-    try:
-        tfinfo = t.fast_info
-    except:
-        tfinfo = None
+
 
     # BVPS
     try:
@@ -193,7 +190,7 @@ def get_keyStat(dbname, ticker):
 
     #marketCap
     try:
-        data.update({'mc': tfinfo['market_cap']})
+        data.update({'mc': tinfo['marketCap']})
     except:
         pass
 
@@ -309,7 +306,7 @@ def get_keyStat(dbname, ticker):
     # Supplement from Local function query: get_query1_yfinance(ticker)
     try:
         fdata = get_query1_yfinance(ticker)
-        if fdata is not None:
+        if fdata is not None and tinfo is None:
             # P/B
             if 'priceToBook' in fdata:
                 data.update({'pb': fdata['priceToBook']})
