@@ -9,7 +9,7 @@ import yfinance as yf
 from yahooquery import Ticker as yhqT
 
 
-from ..models import Index
+from ..models import Index, Watchlist_Index
 from .email import sendMail
 from ..utils.config import Config
 from ..utils.utils import get_smarter_session
@@ -25,6 +25,11 @@ def screener_analysis(sdic):
             logger.info("Start to process: %s" % dbname)
             # Get tickers
             tickers = [r.symbol for r in s.query(Index.symbol).distinct()]
+            picks_list = []
+        elif dbname in ('financials'):
+            logger.info("Start to process: %s" % dbname)
+            # Get tickers
+            tickers = [r.symbol for r in s.query(Watchlist_Index.symbol).distinct()]
             picks_list = []
 
             # Iterate tickers
@@ -60,6 +65,8 @@ def screener_analysis(sdic):
                     elif eps > 0 and pe <= 15 and pb <= 1.59 and ps <= 2 and\
                       de_ratio <= 50 and dividendYield >= 4.05 and payoutRatio >= 25 and ks['beta'] <= 1.2:
                         picks_list.append(ticker)
+                    elif dbname == 'financials' and pe <= 15 and pb <= 1.50:
+                        picks_list.append(ticker)
 
                     logger.info("Screening - (%s, %s)" % (dbname, ticker))
                 except:
@@ -69,7 +76,7 @@ def screener_analysis(sdic):
             if len(picks_list) > 0:
                 picks_dic.update({dbname: picks_list})
                 logger.info("Screener found - (%s, %s)" % (dbname, picks_list))
-    # print(picks_dic)
+    print(picks_dic)
     sendMail(Config, picks_dic)
 
 
@@ -181,10 +188,10 @@ def get_keyStat(dbname, ticker):
 
     # P/E
     try:
-        if tinfo['trailingPE'] is None:
-            data.update({'pe': tinfo['forwardPE']})
-        else:
+        if tinfo['forwardPE'] is None:
             data.update({'pe': tinfo['trailingPE']})
+        else:
+            data.update({'pe': tinfo['forwardPE']})
     except:
         pass
 

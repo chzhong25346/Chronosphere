@@ -11,6 +11,12 @@ class Index(db.Model):
     quote = db.relationship('Quote', backref='quote', lazy=True)
     report = db.relationship('Report', backref='report', lazy=True)
 
+class Watchlist_Index(db.Model):
+    __tablename__ = 'watchlist'
+    symbol = db.Column(db.String(6), unique=True, nullable=False, primary_key=True)
+    company = db.Column(db.String(60), nullable=False)
+
+
 class Quote_CSI300(db.Model):
     __tablename__ = 'quote'
     id = db.Column(db.String(40), unique=True, nullable=False, primary_key=True)

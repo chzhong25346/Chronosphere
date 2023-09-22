@@ -61,7 +61,7 @@ def usage():
     4.  -r/--rsi market(china/canada/usa/eei/commodity) : RSI prediction
     5.  -v/--hvlc market(china/canada/usa/eei/commodity) : High Volume Low Change
     6.  -u/--ublb market(china/canada/usa/eei/commodity) : Up Band Lower Band Cross
-    7.  -s/--screener market(na/commodity) : Screener
+    7.  -s/--screener market(na/china/watchlist/commodity) : Screener
     """
     print(helps)
 
@@ -80,6 +80,8 @@ def analysis(market, module):
         db_name_list = ['tsxci','sp100','eei']
     elif market == 'commodity':
         db_name_list = ['commodity','financials','learning']
+    elif market == 'watchlist':
+        db_name_list = ['financials']
     elif market == 'market':
         db_name_list = ['market','financials','learning']
     elif market == 'testing':
