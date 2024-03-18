@@ -58,7 +58,7 @@ def generate_html(d):
     <html>
     <head></head>
     <body>
-        <h2>Weekly Picks</h2>
+        <h2>Weekly Picks / Monitor Alert</h2>
 
         {picked}<br>
 

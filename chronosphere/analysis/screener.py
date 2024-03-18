@@ -34,7 +34,7 @@ def screener_analysis(sdic):
 
             # Iterate tickers
             for ticker in tickers:
-            # for ticker in ['MFI']:
+            # for ticker in ['NTR.TO']:
                 try:
                     # Key Stats and Current Price
                     if dbname == "tsxci":
@@ -44,7 +44,6 @@ def screener_analysis(sdic):
                         ks = get_keyStat(dbname, ticker)
                     else:
                         ks = get_keyStat(dbname, ticker)
-
                     # print(ks)
 
                     # Screener
@@ -128,12 +127,11 @@ def get_up_down_ratio(df):
 
 def get_keyStat(dbname, ticker):
     data = {}
-    t = yf.Ticker(ticker, session=get_smarter_session())
+    t = yf.Ticker(ticker)
     try:
         tinfo = t.info
     except:
         tinfo = None
-
 
     # BVPS
     try:
@@ -232,6 +230,7 @@ def get_keyStat(dbname, ticker):
         data.update({'beta': tinfo['beta']})
     except:
         pass
+
 
     # Supplement from yahooquery
     try:

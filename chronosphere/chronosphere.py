@@ -15,7 +15,7 @@ logger = logging.getLogger('main')
 def main(argv):
     time_start = time.time()
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:r:v:u:s:", ["help", "turnover=","line=","gap","rsi","hvlc=","ublb=","screener="])
+        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:r:v:u:s:m:", ["help", "turnover=", "line=", "gap", "rsi", "hvlc=", "ublb=", "screener=", "monitor="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -46,6 +46,9 @@ def main(argv):
         elif o in ("-s", "--screener"):
             market = a
             analysis(market, 'screener')
+        elif o in ("-m", "--monitor"):
+            market = a
+            analysis(market, 'monitor')
         else:
             assert False, "unhandled option"
 
@@ -62,6 +65,7 @@ def usage():
     5.  -v/--hvlc market(china/canada/usa/eei/commodity) : High Volume Low Change
     6.  -u/--ublb market(china/canada/usa/eei/commodity) : Up Band Lower Band Cross
     7.  -s/--screener market(na/china/watchlist/commodity) : Screener
+    8.  -m/--monitor market(market): Price Monitor
     """
     print(helps)
 
@@ -84,6 +88,8 @@ def analysis(market, module):
         db_name_list = ['financials']
     elif market == 'market':
         db_name_list = ['market','financials','learning']
+    elif market == 'financials':
+        db_name_list = ['financials']
     elif market == 'testing':
         db_name_list = ['testing','learning']
     sdic = {}

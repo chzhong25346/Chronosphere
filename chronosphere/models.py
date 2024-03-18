@@ -16,6 +16,13 @@ class Watchlist_Index(db.Model):
     symbol = db.Column(db.String(6), unique=True, nullable=False, primary_key=True)
     company = db.Column(db.String(60), nullable=False)
 
+class Monitorlist_Index(db.Model):
+    __tablename__ = 'monitorlist'
+    symbol = db.Column(db.String(6), unique=True, nullable=False, primary_key=True)
+    low_price = db.Column(db.Float, nullable=True)
+    high_price = db.Column(db.Float, nullable=True)
+    latest_reached = db.Column(db.DateTime, nullable=False)
+
 
 class Quote_CSI300(db.Model):
     __tablename__ = 'quote'

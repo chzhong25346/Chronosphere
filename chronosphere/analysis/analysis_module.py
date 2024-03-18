@@ -6,6 +6,7 @@ from .rsi import rsi_prediction
 from .hvlc import hvlc_report
 from .ublb import ublb_cross_analysis
 from .screener import screener_analysis
+from .monitor import monitor_analysis
 logger = logging.getLogger('main.analysis_module')
 
 
@@ -31,3 +32,6 @@ def analysis_hub(type, sdic=None, s=None):
     elif type == 'screener':
         logger.info('Run Task: [Screener]')
         screener_analysis(sdic)
+    elif type == 'monitor':
+        logger.info('Run Task: [Monitor]')
+        monitor_analysis(sdic)
