@@ -11,3 +11,4 @@ class Config():
     EMAIL_USER = os.environ.get('EMAIL_USER')
     EMAIL_PASS = os.environ.get('EMAIL_PASS')
     EMAIL_TO = os.environ.get('EMAIL_TO')
+    MONITOR_HOST = os.environ.get('MONITOR_HOST')

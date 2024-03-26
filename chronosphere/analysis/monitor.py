@@ -1,4 +1,5 @@
 import json
+import socket
 import logging
 import re
 import time
@@ -12,6 +13,7 @@ from ..models import Index, Monitorlist_Index
 from .email import sendMail
 from ..utils.config import Config
 from ..utils.utils import get_smarter_session
+from .send_notice import send_event_to_server
 
 logger = logging.getLogger('main.monitor')
 pd.set_option('mode.chained_assignment', None)
@@ -55,6 +57,9 @@ def monitor_analysis(sdic):
     if picks_dic:
         print(picks_dic)
         sendMail(Config, picks_dic)
+        print('email sent')
+        send_event_to_server(Config)
+        print('notice sent')
 
 
 def get_current_price(ticker):
@@ -64,3 +69,5 @@ def get_current_price(ticker):
         return current_price
     except:
         tinfo = None
+
+

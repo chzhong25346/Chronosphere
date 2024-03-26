@@ -65,7 +65,7 @@ def usage():
     5.  -v/--hvlc market(china/canada/usa/eei/commodity) : High Volume Low Change
     6.  -u/--ublb market(china/canada/usa/eei/commodity) : Up Band Lower Band Cross
     7.  -s/--screener market(na/china/watchlist/commodity) : Screener
-    8.  -m/--monitor market(market): Price Monitor
+    8.  -m/--monitor market(financials): Price Monitor
     """
     print(helps)
 
