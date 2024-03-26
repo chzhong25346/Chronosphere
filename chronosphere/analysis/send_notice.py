@@ -2,9 +2,8 @@ import socket
 
 def send_event_to_server(object):
     # Server address and port
-    PORT = 12345  # Use the same port number as in your server-side script
+    PORT = 55555  # Use the same port number as in your server-side script
 
-    print(object.MONITOR_HOST)
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((object.MONITOR_HOST, PORT))
 
