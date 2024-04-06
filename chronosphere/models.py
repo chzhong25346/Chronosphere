@@ -22,6 +22,7 @@ class Monitorlist_Index(db.Model):
     low_price = db.Column(db.Float, nullable=True)
     high_price = db.Column(db.Float, nullable=True)
     latest_reached = db.Column(db.DateTime, nullable=False)
+    pct_current_to_high = db.Column(db.Float, nullable=True)
 
 
 class Quote_CSI300(db.Model):
