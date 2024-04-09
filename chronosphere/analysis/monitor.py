@@ -66,9 +66,11 @@ def monitor_analysis(sdic):
     if picks_dic:
         logger.info("Price reached - (%s)" % (picks_dic))
         sendMail(Config, picks_dic)
-        print('email sent')
+        logger.info('email sent')
         send_event_to_server(Config)
-        print('notice sent')
+        logger.info('notice sent')
+    else:
+        logger.info('Nothing reached')
 
 def get_current_price(ticker):
     t = yf.Ticker(ticker)

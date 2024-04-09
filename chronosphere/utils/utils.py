@@ -9,6 +9,7 @@ from requests import Session
 from requests_cache import CacheMixin, SQLiteCache
 from requests_ratelimiter import LimiterMixin, MemoryQueueBucket
 from stockstats import StockDataFrame
+from datetime import datetime, time
 
 logger = logging.getLogger('main.util')
 
@@ -95,3 +96,12 @@ def get_smarter_session():
     session.headers['User-agent'] = 'my-program/1.0'
     # session = requests_cache.CachedSession('yfinance.cache')
     return session
+
+
+def run_at_time(hour, minute, func):
+    now = datetime.now().time()
+    if now >= time(hour, minute):  # Checking if the current time is within the specified minute range
+        logger.info(f"It's {now} AM. Running your code now.")
+        func()  # Call the provided function
+    else:
+        logger.info(f"Not yet {hour}:{minute} AM. Waiting...")
