@@ -40,7 +40,7 @@ def monitor_analysis(sdic):
                 if current_price is not None:
                     pct_current_to_high = calculate_pct_current_to_high(current_price, monitor_data['high_price'])
                     # print(monitor_data['symbol'], current_price, pct_current_to_high) # CHECKPOINT
-                    if monitor_data['low_price'] <= current_price <= monitor_data['high_price']:
+                    if current_price <= monitor_data['high_price']:
                         latest_reached_date = monitor_data['latest_reached'] if monitor_data['latest_reached'] else None
                         if latest_reached_date != today:
                             s.query(Monitorlist_Index).filter(Monitorlist_Index.symbol == monitor_data['symbol']).delete()
