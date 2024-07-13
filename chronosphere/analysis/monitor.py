@@ -37,22 +37,28 @@ def monitor_analysis(sdic):
                           'pct_current_to_high': row.pct_current_to_high} for row in result_list]
             for monitor_data in data_list:
                 current_price = get_current_price(monitor_data['symbol'])
+                update_needed = False
+                refresh_needed = False
+
                 if current_price is not None:
                     pct_current_to_high = calculate_pct_current_to_high(current_price, monitor_data['high_price'])
                     # print(monitor_data['symbol'], current_price, pct_current_to_high) # CHECKPOINT
-                    if current_price <= monitor_data['high_price']:
-                        latest_reached_date = monitor_data['latest_reached'] if monitor_data['latest_reached'] else None
-                        if latest_reached_date != today:
-                            s.query(Monitorlist_Index).filter(Monitorlist_Index.symbol == monitor_data['symbol']).delete()
-                            new_entry = Monitorlist_Index(symbol=monitor_data['symbol'],
-                                                          low_price=monitor_data['low_price'],
-                                                          high_price=monitor_data['high_price'],
-                                                          latest_reached=today,
-                                                          pct_current_to_high=pct_current_to_high)
-                            s.add(new_entry)
-                            s.commit()
-                            picks_dic[monitor_data['symbol']] = current_price
+
+                    if monitor_data['low_price'] == monitor_data['high_price'] and current_price <= monitor_data['low_price']:
+                        update_needed = True
+
+                    elif (monitor_data['low_price'] != monitor_data['high_price']) and \
+                            (current_price <= monitor_data['low_price'] or current_price >= monitor_data['high_price']):
+                        if pct_current_to_high >= 1.5:
+                            refresh_needed = True
+                        else:
+                            update_needed = True
+
                     else:
+                        refresh_needed = True
+
+
+                    if refresh_needed:
                         s.query(Monitorlist_Index).filter(Monitorlist_Index.symbol == monitor_data['symbol']).delete()
                         new_entry = Monitorlist_Index(symbol=monitor_data['symbol'],
                                                       low_price=monitor_data['low_price'],
@@ -61,6 +67,20 @@ def monitor_analysis(sdic):
                                                       pct_current_to_high=pct_current_to_high)
                         s.add(new_entry)
                         s.commit()
+
+                    if update_needed:
+                        latest_reached_date = monitor_data['latest_reached'] if monitor_data['latest_reached'] else None
+                        if latest_reached_date != today:
+                            s.query(Monitorlist_Index).filter(
+                                Monitorlist_Index.symbol == monitor_data['symbol']).delete()
+                            new_entry = Monitorlist_Index(symbol=monitor_data['symbol'],
+                                                          low_price=monitor_data['low_price'],
+                                                          high_price=monitor_data['high_price'],
+                                                          latest_reached=today,
+                                                          pct_current_to_high=pct_current_to_high)
+                            s.add(new_entry)
+                            s.commit()
+                            picks_dic[monitor_data['symbol']] = current_price
 
 
     if picks_dic:
