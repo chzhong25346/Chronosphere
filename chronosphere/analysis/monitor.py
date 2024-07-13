@@ -57,7 +57,6 @@ def monitor_analysis(sdic):
                     else:
                         refresh_needed = True
 
-
                     if refresh_needed:
                         s.query(Monitorlist_Index).filter(Monitorlist_Index.symbol == monitor_data['symbol']).delete()
                         new_entry = Monitorlist_Index(symbol=monitor_data['symbol'],
