@@ -95,6 +95,7 @@ def get_current_price(ticker):
     t = yf.Ticker(ticker)
     try:
         current_price = t.history(period='1d')['Close'].iloc[-1]
+        # print(current_price)
         return current_price
     except:
         tinfo = None

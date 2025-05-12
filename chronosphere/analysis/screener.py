@@ -61,14 +61,14 @@ def screener_analysis(sdic):
 
                     # Screener conditions
                     # China
-                    # if dbname == 'csi300' and eps > 0 and pe <= 15 and pb <= 1.59 and ps <= 2 and\
-                    #   de_ratio <= 50 and dividendYield >= 4.05 and payoutRatio >= 25:
-                    #     picks_list.append(ticker)
-                    # # Everywhere else
-                    # elif eps > 0 and pe <= 15 and pb <= 1.59 and ps <= 2 and\
-                    #   de_ratio <= 50 and dividendYield >= 4.05 and payoutRatio >= 25 and ks['beta'] <= 1.2:
-                    #     picks_list.append(ticker)
-                    #     print(11111111111111111111)
+                    if dbname == 'csi300' and eps > 0 and pe <= 15 and pb <= 1.59 and ps <= 2 and\
+                      de_ratio <= 50 and dividendYield >= 4.05 and payoutRatio >= 25:
+                        picks_list.append(ticker)
+                    # Everywhere else
+                    elif eps > 0 and pe <= 15 and pb <= 1.59 and ps <= 2 and\
+                      de_ratio <= 50 and dividendYield >= 4.05 and payoutRatio >= 25 and ks['beta'] <= 1.2:
+                        picks_list.append(ticker)
+                        print(11111111111111111111)
                     if dbname == 'financials' and pe <= 15 and pb <= 1.50:
                         picks_list.append(ticker)
 
@@ -131,114 +131,226 @@ def get_up_down_ratio(df):
 
 
 def get_keyStat(dbname, ticker):
-
     data = {}
-
-    tinfo = None
-
-    if tinfo is not None:
-        pass
-    else:
-        # Supplement Stock Chart summary and yahooquery
-        try:
-            scs, sck = stockChartSummary(ticker)
-        except:
-            scs = None
-            sck = None
-        if scs is not None and tinfo is None:
-            if scs['EPS'] not in ('-','',None):
-                eps = float(scs['EPS'])
-            else:
-                eps = None
-            if scs['Dividend Yield'] not in ('-','',None):
-                dy = float(scs['Dividend Yield'])
-            else:
-                dy = None
-            if scs['Dividend Rate'] not in ('-','',None):
-                dr = float(scs['Dividend Rate'])
-            else:
-                dr = None
-
-            try:
-                if scs['Price To Book'] not in ('-','',None):
-                    pb = float(scs['Price To Book'])
-                else:
-                    pb = None
-            except:
-                pb = None
-
-            if scs['Beta60Month'] not in ('-','',None):
-                beta = float(scs['Beta60Month'])
-            else:
-                beta = None
-            if scs['PriceToFreeCashFlow'] not in ('-','',None):
-                priceToFreeCashFlow = float(scs['PriceToFreeCashFlow'])
-            else:
-                priceToFreeCashFlow = None
-            if scs['PERatio'] not in ('-','',None):
-                pe = float(scs['PERatio'])
-            else:
-                pe = None
-
-            if sck['close'] not in ('-','',None):
-                close = float(sck['close'])
-            else:
-                close = None
-
-            data.update({
-                'bvps': 0,
-                'cr': 1,
-                'qr':'NA',
-                'de': 50,
-                'ps': 1,
-                'pb': pb,
-                'eps': eps,
-                'dy': dy,
-                'por': 'NA',
-                'dr': dr,
-                'pe': pe,
-                'deltaDR_PE': 'NA',
-                'ebitdaMargins': 'NA',
-                'profitMargins': 'NA',
-                'grossMargins': 'NA',
-                'operatingMargins': 'NA',
-                'earningsQuarterlyGrowth': 'NA',
-                'revenueQuarterlyGrowth': 'NA',
-                'beta': beta,
-                'roa': 'NA',
-                'roe': 'NA',
-                'priceToFreeCashFlow': priceToFreeCashFlow,
-                'close':close,
-            })
+    t = yf.Ticker(ticker)
     try:
-        try:
-            mc = millify(sck['marketCap'])
-        except:
-            mc = 'NA'
-        # Moving Average
-        twoHundredDayAverage, fiftyDayAverage = (0, 0)
-        data.update({
-            'mc':mc,
-            'twoHundredDayAverage': twoHundredDayAverage,
-            'fiftyDayAverage': fiftyDayAverage,
-        })
+        tinfo = t.info
     except:
-        data.update({
-            'mc': 'NA',
-            'twoHundredDayAverage': 0,
-            'fiftyDayAverage': 0,
-        })
-
+        tinfo = None
 
     # BVPS
     try:
-            data.update({'bvps': round(data['close'] / data['pb'], 2)})
+        data.update({'bvps': tinfo['bookValue']})
     except:
         pass
 
+    # Price/Sales
+    try:
+        data.update({'ps': round(tinfo['priceToSalesTrailing12Months'], 2)})
+    except:
+        pass
+
+    # Price/Book
+    try:
+        data.update({'pb': round(tinfo['priceToBook'], 2)})
+    except:
+        pass
+
+    # EPS
+    try:
+        if tinfo['trailingEps'] is None:
+            data.update({'eps': tinfo['forwardEps']})
+        else:
+            data.update({'eps': tinfo['trailingEps']})
+    except:
+        pass
+
+    # Current Ratio
+    try:
+        data.update({'cr': tinfo['currentRatio']})
+    except:
+        data.update({'cr': 1})
+
+    # Debt to Equity
+    try:
+        data.update({'de': tinfo['debtToEquity']})
+    except:
+        data.update({'de': 50})
+
+    # Dividend Yield
+    try:
+        data.update({'dy': tinfo['dividendYield']})
+    except:
+        data.update({'dy': 0})
+
+    # Payout Ratio
+    try:
+        data.update({'por': round(tinfo['payoutRatio']*100, 2)})
+    except:
+        data.update({'por': 0})
+
+    # P/E
+    try:
+        if tinfo['forwardPE'] is None:
+            data.update({'pe': tinfo['trailingPE']})
+        else:
+            data.update({'pe': tinfo['forwardPE']})
+    except:
+        pass
+
+    #marketCap
+    try:
+        data.update({'mc': tinfo['marketCap']})
+    except:
+        pass
+
+    #Margins
+    try:
+        data.update({'ebitdaMargins': round(tinfo['ebitdaMargins']*100, 2)})
+    except:
+        pass
+    try:
+        data.update({'profitMargins': round(tinfo['profitMargins']*100, 2)})
+    except:
+        pass
+    try:
+        data.update({'grossMargins': round(tinfo['grossMargins']*100, 2)})
+    except:
+        pass
+    try:
+        data.update({'operatingMargins': round(tinfo['operatingMargins']*100, 2)})
+    except:
+        pass
+    #Growth
+    try:
+        data.update({'earningsQuarterlyGrowth': round(tinfo['earningsQuarterlyGrowth']*100, 2)})
+    except:
+        pass
+    try:
+        data.update({'revenueQuarterlyGrowth': round(tinfo['revenueGrowth']*100, 2)})
+    except:
+        pass
+    #Beta
+    try:
+        data.update({'beta': tinfo['beta']})
+    except:
+        pass
+
+
+    # Supplement from yahooquery
+    try:
+        yhq = yhqT(ticker)
+        yhqs = yhq.summary_detail[ticker]
+    except:
+        yhqs = None
+    if yhqs is not None and tinfo is None:
+        # P/E
+        try:
+            if yhqs['trailingPE'] is None:
+                data.update({'pe': yhqs['forwardPE']})
+            else:
+                data.update({'pe': yhqs['trailingPE']})
+        except:
+            pass
+        # DR
+        try:
+            data.update({'dr': yhqs['dividendRate']})
+        except:
+            pass
+        # DY
+        try:
+            data.update({'dy': yhqs['dividendYield']})
+        except:
+            pass
+        # POR
+        try:
+            data.update({'por': round(yhqs['payoutRatio'] * 100, 2)})
+        except:
+            pass
+        # Beta
+        try:
+            data.update({'beta': yhqs['beta']})
+        except:
+            pass
+        # Price/sales
+        try:
+            data.update({'ps': yhqs['priceToSalesTrailing12Months']})
+        except:
+            pass
+
+    # Supplement from Stock Chart Summary
+    if dbname != 'csi300':
+        try:
+            scs = stockChartSummary(ticker)
+        except:
+            scs = None
+        if tinfo is None and scs is not None:
+            # Beta
+            try:
+                if 'beta' not in data and scs['Beta60Month'] not in ('', '-', '0.00', '0'):
+                    data.update({'beta': float(scs['Beta60Month'])})
+            except:
+                pass
+            # EPS
+            try:
+                if 'eps' not in data and scs['EPS'] not in ('', '-'):
+                    data.update({'eps': float(scs['EPS'])})
+            except:
+                pass
+            # Price/Book
+            try:
+                if 'pb' not in data and scs['PriceToBook'] not in ('', '-', '0.00', '0'):
+                    data.update({'pb': float(scs['PriceToBook'])})
+            except:
+                pass
+            try:
+                if 'pb' not in data and scs['Price To Book '] not in ('', '-', '0.00', '0'):
+                    data.update({'pb': float(scs['Price To Book '])})
+            except:
+                pass
+            try:
+                if 'pb' not in data and scs['Price To Book'] not in ('', '-', '0.00', '0'):
+                    data.update({'pb': float(scs['Price To Book'])})
+            except:
+                pass
+
+    # Supplement from Local function query: get_query1_yfinance(ticker)
+    try:
+        fdata = get_query1_yfinance(ticker)
+        if fdata is not None and tinfo is None:
+            # P/B
+            if 'priceToBook' in fdata:
+                data.update({'pb': fdata['priceToBook']})
+            # EPS
+            if 'epsTrailingTwelveMonths' in fdata:
+                data.update({'eps': fdata['epsTrailingTwelveMonths']})
+            elif 'epsForward' in fdata:
+                data.update({'eps': fdata['epsForward']})
+            elif 'epsCurrentYea' in fdata:
+                data.update({'eps': fdata['epsCurrentYea']})
+            # P/E
+            if 'trailingPE' in fdata:
+                data.update({'pe': fdata['trailingPE']})
+            elif 'forwardPE' in fdata:
+                data.update({'pe': fdata['forwardPE']})
+            # Dividend
+            if 'trailingAnnualDividendRate' in fdata:
+                data.update({'dr': fdata['trailingAnnualDividendRate']})
+            if 'trailingAnnualDividendYield' in fdata:
+                data.update({'dy': fdata['trailingAnnualDividendYield'] * 100})
+    except:
+        pass
+
+    # Supplement from Calculation
+        # EPS
+        if tinfo is None:
+            try:
+                if 'pe' in data and 'eps' not in data:
+                    eps = round(get_yahoo_finance_price(ticker, t) / data['pe'], 2)
+                    data.update({'eps': eps})
+            except:
+                pass
     return data
-
-
 
 def _get_headers():
     return {"accept": "*/*",

@@ -36,5 +36,6 @@ def analysis_hub(type, sdic=None, s=None):
     elif type == 'monitor':
         logger.info('Run Task: [Monitor]')
         run_at_time(9, 30, lambda: monitor_analysis(sdic))
+        # monitor_analysis(sdic)
 
 
