@@ -65,11 +65,9 @@ def screener_analysis(sdic):
                       de_ratio <= 50 and dividendYield >= 4.05 and payoutRatio >= 25:
                         picks_list.append(ticker)
                     # Everywhere else
-                    elif eps > 0 and pe <= 15 and pb <= 1.59 and ps <= 2 and\
-                      de_ratio <= 50 and dividendYield >= 4.05 and payoutRatio >= 25 and ks['beta'] <= 1.2:
-                        picks_list.append(ticker)
-                        print(11111111111111111111)
-                    if dbname == 'financials' and pe <= 15 and pb <= 1.50:
+                    # elif eps > 0 and pe <= 15 and pb <= 1.59 and ps <= 2 and\
+                    #   de_ratio <= 50 and dividendYield >= 4.05 and payoutRatio >= 25 and ks['beta'] <= 1.2:
+                    elif dbname == 'financials' and pe <= 15 and pb <= 1.50:
                         picks_list.append(ticker)
 
                     logger.info("Screening - (%s, %s)" % (dbname, ticker))
@@ -137,7 +135,6 @@ def get_keyStat(dbname, ticker):
         tinfo = t.info
     except:
         tinfo = None
-
     # BVPS
     try:
         data.update({'bvps': tinfo['bookValue']})
