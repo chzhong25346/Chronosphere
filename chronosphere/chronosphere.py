@@ -15,7 +15,8 @@ logger = logging.getLogger('main')
 def main(argv):
     time_start = time.time()
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:r:v:u:s:m:", ["help", "turnover=", "line=", "gap", "rsi", "hvlc=", "ublb=", "screener=", "monitor="])
+        opts, args = getopt.getopt(sys.argv[1:], "ht:l:g:r:v:u:s:m:d:", ["help", "turnover=", "line=", "gap", "rsi", "hvlc=",
+                                                                       "ublb=", "screener=", "monitor=","divergence="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -49,6 +50,9 @@ def main(argv):
         elif o in ("-m", "--monitor"):
             market = a
             analysis(market, 'monitor')
+        elif o in ("-d", "--divergence"):
+            market = a
+            analysis(market, 'divergence')
         else:
             assert False, "unhandled option"
 
@@ -66,6 +70,7 @@ def usage():
     6.  -u/--ublb market(china/canada/usa/eei/commodity) : Up Band Lower Band Cross
     7.  -s/--screener market(na/china/watchlist/commodity) : Screener
     8.  -m/--monitor market(financials): Price Monitor
+    9.  -d/--Divergence market(all): Divergence in Watchlist[DB:financial]
     """
     print(helps)
 
@@ -90,6 +95,8 @@ def analysis(market, module):
         db_name_list = ['market','financials','learning']
     elif market == 'financials':
         db_name_list = ['financials']
+    elif market == 'all':
+        db_name_list = ['financials','csi300','tsxci','eei','sp100','nasdaq100']
     elif market == 'testing':
         db_name_list = ['testing','learning']
     sdic = {}
