@@ -2,7 +2,6 @@ pandas==1.5.3
 urllib3==1.26.13
 stockstats==0.3.0
 numpy==1.24.3
-requests>=2.31
 SQLAlchemy==1.4.44
 beautifulsoup4==4.11.1
 python_dateutil==2.8.1
@@ -16,5 +15,7 @@ appdirs >= 1.4.4
 pytz >= 2022.5
 yahooquery~=2.3.0
 frozendict >= 2.3.4
-requests_cache
-requests_ratelimiter
+requests>=2.31
+requests-cache>=1.2
+requests-ratelimiter>=0.6
+pyrate-limiter>=3.5

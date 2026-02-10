@@ -5,10 +5,12 @@ import re
 
 import pandas as pd
 import requests_cache
+
 from requests import Session
 from requests_cache import CacheMixin, SQLiteCache
 from requests_ratelimiter import LimiterMixin
-from pyrate_limiter import MemoryQueueBucket
+from stockstats import StockDataFrame
+
 
 from stockstats import StockDataFrame
 from datetime import datetime, time
@@ -89,14 +91,13 @@ def millify(n):
 # Yfinance Smarter scraping
 def get_smarter_session():
     class CachedLimiterSession(CacheMixin, LimiterMixin, Session):
-        """ """
+        pass
     session = CachedLimiterSession(
         per_second=0.9,
-        bucket_class=MemoryQueueBucket,
+        bucket_class=MemoryListBucket,      # <- changed
         backend=SQLiteCache("yfinance.cache"),
     )
     session.headers['User-agent'] = 'my-program/1.0'
-    # session = requests_cache.CachedSession('yfinance.cache')
     return session
 
 
