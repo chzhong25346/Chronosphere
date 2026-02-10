@@ -7,7 +7,9 @@ import pandas as pd
 import requests_cache
 from requests import Session
 from requests_cache import CacheMixin, SQLiteCache
-from requests_ratelimiter import LimiterMixin, MemoryQueueBucket
+from requests_ratelimiter import LimiterMixin
+from pyrate_limiter import MemoryQueueBucket
+
 from stockstats import StockDataFrame
 from datetime import datetime, time
 
