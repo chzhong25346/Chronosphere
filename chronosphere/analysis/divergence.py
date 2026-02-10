@@ -23,7 +23,7 @@ def divergence_analysis(sdic):
         .distinct()
     }
     # watch_tickers = ['000768.SZ', 'CNR.TO', 'RCI-B.TO', 'MSFT', 'DD'] ## TEST CHECKPOINT
-    # watch_tickers = ['PSK.TO']  ## TEST CHECKPOINT
+    # watch_tickers = ['TRP.TO']  ## TEST CHECKPOINT
     for dbname, session in sdic.items():
         if dbname == 'financials':
             continue
@@ -63,14 +63,14 @@ def divergence_analysis(sdic):
 
                 # Add MACD in df and slice trend days
                 df = _get_macd(df)
-                df = _rows_before_latest(df, days)
+                df = _rows_in_trend(df, days)
 
                 if is_bullish:
                     logger.info("Finding divergence - %s - %s for %s days" % (ticker, 'Bull', days))
                     is_ath = df.iloc[-1]['high'] == df['high'].max(skipna=True) # All Time High
                     is_macdh_down = len(df) >= 2 and (df['macdh'].iloc[-1] < df['macdh'].iloc[-2]) # Bar Lower than previous
                     if is_ath and is_macdh_down:
-                        picks.append(ticker)
+                        picks.append(ticker + "↑" + str(days))
                         logger.info("Divergence found! - (%s)" % (ticker))
 
                 else:
@@ -78,14 +78,15 @@ def divergence_analysis(sdic):
                     is_atl= df.iloc[-1]['low'] == df['low'].min() # All TIme Low
                     is_macdh_up = len(df) >= 2 and (df['macdh'].iloc[-1] > df['macdh'].iloc[-2]) # Bar higher than previous
                     if is_atl and is_macdh_up:
-                        picks.append(ticker)
+                        picks.append(ticker + "↓" + str(days))
                         logger.info("Divergence found！ - (%s)" % (ticker))
     if len(picks) > 0:
         logger.info("All Divergence found: - (%s)" % (picks))
+        print(picks)
         sendMail_Message(Config, 'Divergence Found', picks)
 
 
-def _rows_before_latest(df, n):
+def _rows_in_trend(df, n):
     """
     Returns the previous n rows immediately before the latest row.
     If there are fewer than n+1 rows, returns as many as available.
@@ -93,7 +94,7 @@ def _rows_before_latest(df, n):
     if len(df) <= 1:
         return df.iloc[0:0]   # empty
     start = max(0, len(df) - (n + 1))
-    return df.iloc[start:-1]
+    return df.iloc[start:]
 
 
 # Calculate MACD
