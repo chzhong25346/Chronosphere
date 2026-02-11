@@ -73,7 +73,10 @@ def divergence_analysis(sdic):
                     lo, hi =  _find_shadow_range('Bull', df) # is High in previous upper shadow
                     is_in_shadow = lo < df.iloc[-1]['high'] <= hi
                     if (is_ath or is_in_shadow) and is_macdh_down:
-                        picks.append(ticker + "↑" + str(days))
+                        if is_ath:
+                            picks.append(ticker + "↑" + str(days)+'New')
+                        else:
+                            picks.append(ticker + "↑" + str(days))
                         logger.info("Divergence found! - (%s)" % (ticker))
 
                     # print('is ath', is_ath)
@@ -89,7 +92,10 @@ def divergence_analysis(sdic):
                     lo, hi = _find_shadow_range('Bear',df)  # is High in previous lower shadow
                     is_in_shadow = lo <= df.iloc[-1]['low'] < hi
                     if (is_atl or is_in_shadow) and is_macdh_up:
-                        picks.append(ticker + "↓" + str(days))
+                        if is_atl:
+                            picks.append(ticker + "↓" + str(days)+'New')
+                        else:
+                            picks.append(ticker + "↓" + str(days))
                         logger.info("Divergence found！ - (%s)" % (ticker))
 
                     # print('is atl', is_atl)
