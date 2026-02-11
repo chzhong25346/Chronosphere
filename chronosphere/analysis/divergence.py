@@ -4,6 +4,7 @@ import re
 import time
 import sys
 import pandas as pd
+import math
 
 from ..models import Index, Watchlist_Index, Quote, Quote_CSI300
 from .email import sendMail_Message
@@ -23,7 +24,7 @@ def divergence_analysis(sdic):
         .distinct()
     }
     # watch_tickers = ['000768.SZ', 'CNR.TO', 'RCI-B.TO', 'MSFT', 'DD'] ## TEST CHECKPOINT
-    # watch_tickers = ['TRP.TO']  ## TEST CHECKPOINT
+    # watch_tickers = ['601818.SH']  ## TEST CHECKPOINT
     for dbname, session in sdic.items():
         if dbname == 'financials':
             continue
@@ -69,21 +70,101 @@ def divergence_analysis(sdic):
                     logger.info("Finding divergence - %s - %s for %s days" % (ticker, 'Bull', days))
                     is_ath = df.iloc[-1]['high'] == df['high'].max(skipna=True) # All Time High
                     is_macdh_down = len(df) >= 2 and (df['macdh'].iloc[-1] < df['macdh'].iloc[-2]) # Bar Lower than previous
-                    if is_ath and is_macdh_down:
+                    lo, hi =  _find_shadow_range('Bull', df) # is High in previous upper shadow
+                    is_in_shadow = lo < df.iloc[-1]['high'] <= hi
+                    if (is_ath or is_in_shadow) and is_macdh_down:
                         picks.append(ticker + "↑" + str(days))
                         logger.info("Divergence found! - (%s)" % (ticker))
 
+                    # print('is ath', is_ath)
+                    # print('is macdh_down', is_macdh_down)
+                    # print('is in_shadow', is_in_shadow, lo, hi)
+                    # print('today high', df.iloc[-1]['high'])
+
+                # is bearish
                 else:
                     logger.info("Finding divergence - %s - %s for %s days" % (ticker, 'Bear', days))
-                    is_atl= df.iloc[-1]['low'] == df['low'].min() # All TIme Low
+                    is_atl = df.iloc[-1]['low'] == df['low'].min(skipna=True) # All Time Low
                     is_macdh_up = len(df) >= 2 and (df['macdh'].iloc[-1] > df['macdh'].iloc[-2]) # Bar higher than previous
-                    if is_atl and is_macdh_up:
+                    lo, hi = _find_shadow_range('Bear',df)  # is High in previous lower shadow
+                    is_in_shadow = lo <= df.iloc[-1]['low'] < hi
+                    if (is_atl or is_in_shadow) and is_macdh_up:
                         picks.append(ticker + "↓" + str(days))
                         logger.info("Divergence found！ - (%s)" % (ticker))
+
+                    # print('is atl', is_atl)
+                    # print('is is_macdh_up', is_macdh_up)
+                    # print('is in_shadow', is_in_shadow, lo, hi)
+                    # print('today low', df.iloc[-1]['low'])
+
     if len(picks) > 0:
         logger.info("All Divergence found: - (%s)" % (picks))
         print(picks)
         sendMail_Message(Config, 'Divergence Found', picks)
+
+
+# Assessories Functions ===================================
+
+
+def _find_shadow_range(direction, df):
+
+    if df is None or len(df) == 0:
+        return (None, None)
+
+    d = df.copy()
+
+    # Tolerate mixed column naming
+    def _pick(row, short, long_):
+        return row[short] if short in row else row[long_]
+
+    # Choose the anchor row based on direction
+    if direction == 'Bull':
+        # Bar with the maximum high (last occurrence if ties)
+        # idxmax gives first occurrence; we reverse to find last
+        try:
+            anchor_idx = d['high'].iloc[::-1].idxmax()
+        except KeyError:
+            anchor_idx = d['h'].iloc[::-1].idxmax()
+    elif direction == 'Bear':
+        # Bar with the minimum low (last occurrence if ties)
+        try:
+            anchor_idx = d['low'].iloc[::-1].idxmin()
+        except KeyError:
+            anchor_idx = d['l'].iloc[::-1].idxmin()
+    else:
+        # Unknown direction
+        return (None, None)
+
+    # Extract the anchor row
+    anchor = d.loc[anchor_idx]
+
+    # Flexible OHLC access
+    o = _pick(anchor, 'o', 'open')
+    h = _pick(anchor, 'h', 'high')
+    l = _pick(anchor, 'l', 'low')
+    c = _pick(anchor, 'c', 'close')
+
+    # Validate values
+    if any(v is None for v in (o, h, l, c)):
+        return (None, None)
+
+    # Compute shadow per rules
+    if direction == 'Bear':
+        # LOWER shadow of the min-low bar
+        # (c, l) if bearish else (o, l) if bullish/doji
+        lower_start = c if c < o else o
+        lo = min(lower_start, l)
+        hi = max(lower_start, l)
+        return (lo, hi)
+
+    else:  # direction == 'Bull'
+        # UPPER shadow of the max-high bar
+        # (o, h) if c <= o (bearish/doji), else (c, h) if bullish
+        upper_start = o if c <= o else c
+        lo = min(upper_start, h)
+        hi = max(upper_start, h)
+        return (lo, hi)
+
 
 
 def _rows_in_trend(df, n):
