@@ -24,7 +24,7 @@ def divergence_analysis(sdic):
         .distinct()
     }
     # watch_tickers = ['000768.SZ', 'CNR.TO', 'RCI-B.TO', 'MSFT', 'DD'] ## TEST CHECKPOINT
-    # watch_tickers = ['601818.SH']  ## TEST CHECKPOINT
+    # watch_tickers = ['CP.TO']  ## TEST CHECKPOINT
     for dbname, session in sdic.items():
         if dbname == 'financials':
             continue
@@ -72,14 +72,17 @@ def divergence_analysis(sdic):
                     is_macdh_down = len(df) >= 2 and (df['macdh'].iloc[-1] < df['macdh'].iloc[-2]) # Bar Lower than previous
                     lo, hi =  _find_shadow_range('Bull', df) # is High in previous upper shadow
                     is_in_shadow = lo < df.iloc[-1]['high'] <= hi and df.iloc[-1]['close'] <= lo
+                    long_shadow = _has_long_shadow('Bull', df)
                     if (is_ath or is_in_shadow) and is_macdh_down:
-                        if is_ath:
+                        if is_ath and long_shadow:
                             picks.append(ticker + "↑" + str(days)+'New')
-                        else:
+                            logger.info("Divergence found! - (%s)" % (ticker))
+                        elif long_shadow:
                             picks.append(ticker + "↑" + str(days))
-                        logger.info("Divergence found! - (%s)" % (ticker))
+                            logger.info("Divergence found! - (%s)" % (ticker))
 
                     # print('is ath', is_ath)
+                    # print('is long shadow', long_shadow)
                     # print('is macdh_down', is_macdh_down)
                     # print('is in_shadow', is_in_shadow, lo, hi)
                     # print('today high', df.iloc[-1]['high'])
@@ -91,14 +94,17 @@ def divergence_analysis(sdic):
                     is_macdh_up = len(df) >= 2 and (df['macdh'].iloc[-1] > df['macdh'].iloc[-2]) # Bar higher than previous
                     lo, hi = _find_shadow_range('Bear',df)  # is High in previous lower shadow
                     is_in_shadow = lo <= df.iloc[-1]['low'] < hi and df.iloc[-1]['close'] >= hi
+                    long_shadow = _has_long_shadow('Bear', df)
                     if (is_atl or is_in_shadow) and is_macdh_up:
-                        if is_atl:
+                        if is_atl and long_shadow:
                             picks.append(ticker + "↓" + str(days)+'New')
-                        else:
+                            logger.info("Divergence found！ - (%s)" % (ticker))
+                        elif long_shadow:
                             picks.append(ticker + "↓" + str(days))
-                        logger.info("Divergence found！ - (%s)" % (ticker))
+                            logger.info("Divergence found！ - (%s)" % (ticker))
 
                     # print('is atl', is_atl)
+                    # print('is long shadow', long_shadow)
                     # print('is is_macdh_up', is_macdh_up)
                     # print('is in_shadow', is_in_shadow, lo, hi)
                     # print('today low', df.iloc[-1]['low'])
@@ -106,10 +112,50 @@ def divergence_analysis(sdic):
     if len(picks) > 0:
         logger.info("All Divergence found: - (%s)" % (picks))
         print(picks)
-        sendMail_Message(Config, 'Divergence Found', picks)
+        # sendMail_Message(Config, 'Divergence Found', picks)
 
 
 # Assessories Functions ===================================
+
+
+def _has_long_shadow(direction, df, ratio=2):
+    """
+    Check if latest candle has long upper/lower shadow.
+    direction:
+        'Bull' -> check upper shadow >= ratio * body
+        'Bear' -> check lower shadow >= ratio * body
+    """
+
+    if df is None or len(df) == 0:
+        return False
+
+    row = df.iloc[-1]
+
+    # Flexible column names
+    def _pick(r, short, long_):
+        return r[short] if short in r else r[long_]
+
+    o = _pick(row, 'o', 'open')
+    h = _pick(row, 'h', 'high')
+    l = _pick(row, 'l', 'low')
+    c = _pick(row, 'c', 'close')
+
+    if any(v is None for v in (o, h, l, c)):
+        return False
+
+    body = abs(c - o)
+
+    # Avoid division issues (doji case)
+    if body == 0:
+        body = 0.0001
+
+    upper_shadow = h - max(o, c)
+    lower_shadow = min(o, c) - l
+
+    if direction == 'Bull':
+        return upper_shadow >= ratio * body
+    else:  # Bear
+        return lower_shadow >= ratio * body
 
 
 def _find_shadow_range(direction, df):
