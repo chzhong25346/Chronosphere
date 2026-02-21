@@ -77,7 +77,7 @@ def divergence_analysis(sdic):
                         if is_ath and long_shadow:
                             picks.append(ticker + "↑" + str(days)+'New')
                             logger.info("Divergence found! - (%s)" % (ticker))
-                        elif long_shadow:
+                        elif is_in_shadow:
                             picks.append(ticker + "↑" + str(days))
                             logger.info("Divergence found! - (%s)" % (ticker))
 
@@ -99,7 +99,7 @@ def divergence_analysis(sdic):
                         if is_atl and long_shadow:
                             picks.append(ticker + "↓" + str(days)+'New')
                             logger.info("Divergence found！ - (%s)" % (ticker))
-                        elif long_shadow:
+                        elif is_in_shadow:
                             picks.append(ticker + "↓" + str(days))
                             logger.info("Divergence found！ - (%s)" % (ticker))
 
