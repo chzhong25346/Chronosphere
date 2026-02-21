@@ -112,7 +112,7 @@ def divergence_analysis(sdic):
     if len(picks) > 0:
         logger.info("All Divergence found: - (%s)" % (picks))
         print(picks)
-        # sendMail_Message(Config, 'Divergence Found', picks)
+        sendMail_Message(Config, 'Divergence Found', picks)
 
 
 # Assessories Functions ===================================
