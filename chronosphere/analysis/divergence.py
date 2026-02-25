@@ -104,7 +104,7 @@ def divergence_analysis(sdic):
                             logger.info("Divergence found！ - (%s)" % (ticker))
 
                     # print('is atl', is_atl)
-                    # print('is long shadow', long_shadow)
+                    # print('is long shadow', long_shadow)PSK.
                     # print('is is_macdh_up', is_macdh_up)
                     # print('is in_shadow', is_in_shadow, lo, hi)
                     # print('today low', df.iloc[-1]['low'])
