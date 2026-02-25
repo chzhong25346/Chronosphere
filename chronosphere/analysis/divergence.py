@@ -122,43 +122,36 @@ def divergence_analysis(sdic):
 # Assessories Functions ===================================
 
 
-def _has_long_shadow(direction, df, ratio=1.49):
+def _has_long_shadow(direction, df, ratio=1.02):
     """
     Check if latest candle has long upper/lower shadow.
-    direction:
-        'Bull' -> check upper shadow >= ratio * body
-        'Bear' -> check lower shadow >= ratio * body
+    Returns False if the candle is a doji (open == close).
     """
-
     if df is None or len(df) == 0:
         return False
 
     row = df.iloc[-1]
 
-    # Flexible column names
-    def _pick(r, short, long_):
-        return r[short] if short in r else r[long_]
-
-    o = _pick(row, 'o', 'open')
-    h = _pick(row, 'h', 'high')
-    l = _pick(row, 'l', 'low')
-    c = _pick(row, 'c', 'close')
+    # Handle flexible column names
+    o = row['o'] if 'o' in row else row['open']
+    h = row['h'] if 'h' in row else row['high']
+    l = row['l'] if 'l' in row else row['low']
+    c = row['c'] if 'c' in row else row['close']
 
     if any(v is None for v in (o, h, l, c)):
         return False
 
     body = abs(c - o)
 
-    # Avoid division issues (doji case)
+    # STRICT DOJI CHECK: If no body, it's not a "long shadow" candle
     if body == 0:
-        body = 0.0001
-
-    upper_shadow = h - max(o, c)
-    lower_shadow = min(o, c) - l
+        return False
 
     if direction == 'Bull':
+        upper_shadow = h - max(o, c)
         return upper_shadow >= ratio * body
     else:  # Bear
+        lower_shadow = min(o, c) - l
         return lower_shadow >= ratio * body
 
 
