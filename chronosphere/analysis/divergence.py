@@ -24,7 +24,7 @@ def divergence_analysis(sdic):
         .distinct()
     }
     # watch_tickers = ['000768.SZ', 'CNR.TO', 'RCI-B.TO', 'MSFT', 'DD'] ## TEST CHECKPOINT
-    # watch_tickers = ['CP.TO']  ## TEST CHECKPOINT
+    # watch_tickers = ['CNR.TO']  ## TEST CHECKPOINT
     for dbname, session in sdic.items():
         if dbname == 'financials':
             continue
@@ -77,10 +77,12 @@ def divergence_analysis(sdic):
                         if is_ath and long_shadow:
                             picks.append(ticker + "↑" + str(days)+'New')
                             logger.info("Divergence found! - (%s)" % (ticker))
+                        elif is_ath and not long_shadow:
+                            pass
                         elif is_in_shadow:
                             picks.append(ticker + "↑" + str(days))
                             logger.info("Divergence found! - (%s)" % (ticker))
-
+                    #
                     # print('is ath', is_ath)
                     # print('is long shadow', long_shadow)
                     # print('is macdh_down', is_macdh_down)
@@ -99,12 +101,14 @@ def divergence_analysis(sdic):
                         if is_atl and long_shadow:
                             picks.append(ticker + "↓" + str(days)+'New')
                             logger.info("Divergence found！ - (%s)" % (ticker))
+                        elif is_atl and not long_shadow:
+                            pass
                         elif is_in_shadow:
                             picks.append(ticker + "↓" + str(days))
                             logger.info("Divergence found！ - (%s)" % (ticker))
-
+                    #
                     # print('is atl', is_atl)
-                    # print('is long shadow', long_shadow)PSK.
+                    # print('is long shadow', long_shadow)
                     # print('is is_macdh_up', is_macdh_up)
                     # print('is in_shadow', is_in_shadow, lo, hi)
                     # print('today low', df.iloc[-1]['low'])
@@ -112,7 +116,7 @@ def divergence_analysis(sdic):
     if len(picks) > 0:
         logger.info("All Divergence found: - (%s)" % (picks))
         print(picks)
-        sendMail_Message(Config, 'Divergence Found', picks)
+        # sendMail_Message(Config, 'Divergence Found', picks)
 
 
 # Assessories Functions ===================================
