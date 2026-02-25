@@ -122,7 +122,7 @@ def divergence_analysis(sdic):
 # Assessories Functions ===================================
 
 
-def _has_long_shadow(direction, df, ratio=1.4):
+def _has_long_shadow(direction, df, ratio=1.3):
     """
     Check if latest candle has long upper/lower shadow.
     Returns False if the candle is a doji (open == close).
