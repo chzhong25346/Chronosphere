@@ -11,46 +11,57 @@ from dateutil import parser
 logger = logging.getLogger('main.email')
 
 def sendMail_Message(object, sub, message):
-    # today's datetime
+    import datetime as dt
+    from dateutil import parser
+    import ssl
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
     day = dt.datetime.today().strftime("%Y-%m-%d")
     dow = parser.parse(day).strftime("%a")
     today = day + ' ' + dow
-    # start talking to the SMTP server for Gmail
-    context = ssl.create_default_context()
 
+    context = ssl.create_default_context()
     s = smtplib.SMTP('smtp.gmail.com', 587)
     s.starttls(context=context)
     s.ehlo()
-    # now login as my gmail user
+
     user = object.EMAIL_USER
     pwd = object.EMAIL_PASS
-    # rcpt = object.EMAIL_TO
     rcpt = [i for i in object.EMAIL_TO.split(',')]
-    try:
-        s.login(user,pwd)
-    except Exception as e:
-        logger.error(e)
 
-    # Create message container - the correct MIME type is multipart/alternative.
+    s.login(user, pwd)
+
     msg = MIMEMultipart('alternative')
     msg['Subject'] = today + " " + sub
     msg['From'] = user
     msg['To'] = ", ".join(rcpt)
 
-    # if picks is a list like ['PSK.TO', 'ABC.TO']
-    body_plain = "\n".join(message)
-    attachment = MIMEText(body_plain, 'plain', 'utf-8')
+    # Build HTML body with colors
+    html_lines = []
+    for line in message:
+        if "↓" in line:
+            html_lines.append(f'<span style="color:red;">{line}</span>')
+        elif "↑" in line:
+            html_lines.append(f'<span style="color:green;">{line}</span>')
+        else:
+            html_lines.append(line)
 
-    # Attach parts into message container.
-    # According to RFC 2046, the last part of a multipart message, in this case
-    # the HTML message, is best and preferred.
-    msg.attach(attachment)
+    html_body = "<br>".join(html_lines)
 
-    # send the email
+    html_content = f"""
+    <html>
+      <body>
+        {html_body}
+      </body>
+    </html>
+    """
+
+    msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+
     s.sendmail(user, rcpt, msg.as_string())
-    # we're done
     s.quit()
-    logger.info("Sent email")
 
 
 def sendMail(object, pick_dic):
