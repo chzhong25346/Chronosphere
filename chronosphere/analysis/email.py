@@ -76,6 +76,11 @@ def sendMail_Message(object, sub, message):
     <html>
       <body>
         {html_body}
+        <p style="background-color: yellow; padding: 10px; border-radius: 4px; color: black; line-height: 1.6;">
+        1. 关注信号后有没有大量（超过这一天）<br>
+        2. 长周期打水漂 <br>
+        3. 短周期变盘快
+        </p>
       </body>
     </html>
     """
