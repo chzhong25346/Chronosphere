@@ -24,7 +24,7 @@ def divergence_analysis(sdic):
         .distinct()
     }
     # watch_tickers = ['000768.SZ', 'CNR.TO', 'RCI-B.TO', 'MSFT', 'DD'] ## TEST CHECKPOINT
-    # watch_tickers = ['CNR.TO']  ## TEST CHECKPOINT
+    # watch_tickers = ['SYK']  ## TEST CHECKPOINT
     for dbname, session in sdic.items():
         if dbname == 'financials':
             continue
@@ -75,12 +75,14 @@ def divergence_analysis(sdic):
                     long_shadow = _has_long_shadow('Bull', df)
                     if (is_ath or is_in_shadow) and is_macdh_down:
                         if is_ath and long_shadow:
-                            picks.append(ticker + "↑" + str(days)+'New')
+                            diff_ma = _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2)
+                            picks.append(ticker + " ↑" + str(days)+'New' + " \u0394" + diff_ma)
                             logger.info("Divergence found! - (%s)" % (ticker))
                         elif is_ath and not long_shadow:
                             pass
                         elif is_in_shadow:
-                            picks.append(ticker + "↑" + str(days))
+                            diff_ma = _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2)
+                            picks.append(ticker + " ↑" + str(days) + " \u0394" + diff_ma)
                             logger.info("Divergence found! - (%s)" % (ticker))
                     #
                     # print('is ath', is_ath)
@@ -99,12 +101,14 @@ def divergence_analysis(sdic):
                     long_shadow = _has_long_shadow('Bear', df)
                     if (is_atl or is_in_shadow) and is_macdh_up:
                         if is_atl and long_shadow:
-                            picks.append(ticker + "↓" + str(days)+'New')
+                            diff_ma = _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2)
+                            picks.append(ticker + " ↓"  + str(days) + 'New' + " \u0394" + diff_ma)
                             logger.info("Divergence found！ - (%s)" % (ticker))
                         elif is_atl and not long_shadow:
                             pass
                         elif is_in_shadow:
-                            picks.append(ticker + "↓" + str(days))
+                            diff_ma = _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2)
+                            picks.append(ticker + " ↓" + str(days) + " \u0394" + diff_ma)
                             logger.info("Divergence found！ - (%s)" % (ticker))
                     #
                     # print('is atl', is_atl)
@@ -115,11 +119,47 @@ def divergence_analysis(sdic):
 
     if len(picks) > 0:
         logger.info("All Divergence found: - (%s)" % (picks))
-        print(picks)
         sendMail_Message(Config, 'Divergence Found', picks)
 
-
 # Assessories Functions ===================================
+
+
+def _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2):
+    """
+    Calculate (MA5 - MA10) / MA10 * 100 for the latest row.
+
+    Returns:
+        float or None: percentage difference (positive if MA5 > MA10)
+        str         : formatted string like "+4.82%" or "-7.15%" or error message
+
+    Example output:
+        5.34    →  "+5.34%"
+        -3.1    →  "-3.10%"
+    """
+    if len(df) < 10:
+        return None, f"Not enough data — need ≥10 rows, got {len(df)}"
+
+    if price_col not in df.columns:
+        return None, f"Column '{price_col}' not found in DataFrame"
+
+    df = df.copy()
+
+    # Calculate simple moving averages
+    df['ma5'] = df[price_col].rolling(window=5, min_periods=5).mean()
+    df['ma10'] = df[price_col].rolling(window=10, min_periods=10).mean()
+
+    latest = df.iloc[-1]
+
+    if pd.isna(latest['ma5']) or pd.isna(latest['ma10']):
+        return None, "Not enough valid data to compute both MA5 and MA10"
+
+    diff_pct = (latest['ma5'] - latest['ma10']) / latest['ma10'] * 100
+    rounded = round(diff_pct, decimals)
+
+    # Format with sign
+    sign = "+" if rounded > 0 else "" if rounded == 0 else ""
+    formatted = f"{sign}{rounded:.{decimals}f}%"
+    return formatted
 
 
 def _has_long_shadow(direction, df, ratio=1.3):

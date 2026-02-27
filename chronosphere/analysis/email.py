@@ -2,6 +2,7 @@ import datetime as dt
 import logging
 import smtplib
 import ssl
+import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -41,10 +42,31 @@ def sendMail_Message(object, sub, message):
     # Build HTML body with colors
     html_lines = []
     for line in message:
-        if "↓" in line:
-            html_lines.append(f'<span style="color:red;">{line}</span>')
-        elif "↑" in line:
-            html_lines.append(f'<span style="color:green;">{line}</span>')
+        match = re.search(r'([↑↓])(\d+)', line)
+
+        if match:
+            arrow = match.group(1)
+            value = int(match.group(2))
+
+            # Cap value (prevent too dark)
+            max_val = 100
+            value = min(value, max_val)
+
+            intensity = int(255 * (value / max_val))
+
+            if arrow == "↑":
+                # Green gradient (light → deep green)
+                r = 0
+                g = intensity
+                b = 0
+            else:
+                # Red gradient (light → deep red)
+                r = intensity
+                g = 0
+                b = 0
+
+            color = f"rgb({r},{g},{b})"
+            html_lines.append(f'<span style="color:{color}; font-weight:bold;">{line}</span>')
         else:
             html_lines.append(line)
 
