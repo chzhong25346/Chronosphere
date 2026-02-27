@@ -163,7 +163,7 @@ def _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2):
     return formatted
 
 
-def _has_long_shadow(direction, df, ratio=1.3):
+def _has_long_shadow(direction, df, ratio=1.05):
     """
     Check if latest candle has long upper/lower shadow.
     Returns False if the candle is a doji (open == close).
