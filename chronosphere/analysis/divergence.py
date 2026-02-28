@@ -142,7 +142,7 @@ def divergence_analysis(sdic):
 # Assessories Functions ===================================
 
 
-def _volume_surge(df, latest_reached, multiplier=1.2):
+def _volume_surge(df, latest_reached, multiplier=1.25):
     """
     Check if latest day's volume >= multiplier × volume on latest_reached date.
 
