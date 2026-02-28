@@ -6,7 +6,7 @@ import sys
 import pandas as pd
 import math
 
-from ..models import Index, Watchlist_Index, Quote, Quote_CSI300
+from ..models import Index, Watchlist_Index, Quote, Quote_CSI300, Monitorlist_Index
 from .email import sendMail_Message
 from ..utils.config import Config
 from ..utils.utils import get_smarter_session
@@ -16,6 +16,10 @@ pd.set_option('mode.chained_assignment', None)
 
 
 def divergence_analysis(sdic):
+    s_financials = sdic['financials']
+    monitor_list= [{'symbol': row.symbol,
+                  'latest_reached': row.latest_reached} for row in s_financials.query(Monitorlist_Index).distinct().all()]
+
     picks = []
     watch_tickers = {
         r.symbol
@@ -24,7 +28,7 @@ def divergence_analysis(sdic):
         .distinct()
     }
     # watch_tickers = ['000768.SZ', 'CNR.TO', 'RCI-B.TO', 'MSFT', 'DD'] ## TEST CHECKPOINT
-    # watch_tickers = ['SYK']  ## TEST CHECKPOINT
+    # watch_tickers = ['PLD']  ## TEST CHECKPOINT
     for dbname, session in sdic.items():
         if dbname == 'financials':
             continue
@@ -66,6 +70,15 @@ def divergence_analysis(sdic):
                 df = _get_macd(df)
                 df = _rows_in_trend(df, days)
 
+                # If ticker in monitor list already, check if volume of latest day is 1.2 times larger than the volume of
+                # latest_reached date. if true, add ticker to picks.
+                if any(d['symbol'] == ticker for d in monitor_list):
+                    latest_reached = next((item for item in monitor_list if item['symbol'] == ticker), None)['latest_reached']
+                    if _volume_surge(df, latest_reached):
+                        logger.info("Volume Surge! - (%s)" % (ticker))
+                        picks.append(ticker + ' Volume Surge')
+
+
                 if is_bullish:
                     logger.info("Finding divergence - %s - %s for %s days" % (ticker, 'Bull', days))
                     is_ath = df.iloc[-1]['high'] == df['high'].max(skipna=True) # All Time High
@@ -75,12 +88,14 @@ def divergence_analysis(sdic):
                     long_shadow = _has_long_shadow('Bull', df)
                     if (is_ath or is_in_shadow) and is_macdh_down:
                         if is_ath and long_shadow:
+                            _update_monitor_table(s_financials, ticker, df.index[-1])
                             diff_ma = _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2)
                             picks.append(ticker + " ↑" + str(days)+'New' + " \u0394" + diff_ma)
                             logger.info("Divergence found! - (%s)" % (ticker))
                         elif is_ath and not long_shadow:
                             pass
                         elif is_in_shadow:
+                            _update_monitor_table(s_financials, ticker, df.index[-1])
                             diff_ma = _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2)
                             picks.append(ticker + " ↑" + str(days) + " \u0394" + diff_ma)
                             logger.info("Divergence found! - (%s)" % (ticker))
@@ -91,7 +106,7 @@ def divergence_analysis(sdic):
                     # print('is in_shadow', is_in_shadow, lo, hi)
                     # print('today high', df.iloc[-1]['high'])
 
-                # is bearish
+                # is bearish ?
                 else:
                     logger.info("Finding divergence - %s - %s for %s days" % (ticker, 'Bear', days))
                     is_atl = df.iloc[-1]['low'] == df['low'].min(skipna=True) # All Time Low
@@ -101,12 +116,14 @@ def divergence_analysis(sdic):
                     long_shadow = _has_long_shadow('Bear', df)
                     if (is_atl or is_in_shadow) and is_macdh_up:
                         if is_atl and long_shadow:
+                            _update_monitor_table(s_financials, ticker, df.index[-1])
                             diff_ma = _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2)
                             picks.append(ticker + " ↓"  + str(days) + 'New' + " \u0394" + diff_ma)
                             logger.info("Divergence found！ - (%s)" % (ticker))
                         elif is_atl and not long_shadow:
                             pass
                         elif is_in_shadow:
+                            _update_monitor_table(s_financials, ticker, df.index[-1])
                             diff_ma = _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2)
                             picks.append(ticker + " ↓" + str(days) + " \u0394" + diff_ma)
                             logger.info("Divergence found！ - (%s)" % (ticker))
@@ -123,6 +140,53 @@ def divergence_analysis(sdic):
 
 
 # Assessories Functions ===================================
+
+
+def _volume_surge(df, latest_reached, multiplier=1.2):
+    """
+    Check if latest day's volume >= multiplier × volume on latest_reached date.
+
+    Args:
+        df (DataFrame): must contain 'volume' column
+        latest_reached (datetime-like)
+        multiplier (float)
+
+    Returns:
+        bool
+    """
+
+    if df is None or df.empty:
+        return False
+
+    if 'volume' not in df.columns:
+        return False
+
+    # Ensure datetime index
+    if not isinstance(df.index, pd.DatetimeIndex):
+        df.index = pd.to_datetime(df.index)
+
+    latest_date = df.index[-1]
+    latest_volume = df.iloc[-1]['volume']
+
+    # Convert latest_reached to Timestamp
+    latest_reached = pd.to_datetime(latest_reached)
+
+    if latest_reached not in df.index:
+        return False
+
+    old_volume = df.loc[latest_reached]['volume']
+
+    if pd.isna(latest_volume) or pd.isna(old_volume):
+        return False
+    return latest_volume >= multiplier * old_volume
+
+
+
+def _update_monitor_table(s, symbol, date):
+    s.query(Monitorlist_Index).filter(Monitorlist_Index.symbol == symbol).delete()
+    s.add(Monitorlist_Index(symbol=symbol,
+                      latest_reached=date))
+    s.commit()
 
 
 def _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2):
