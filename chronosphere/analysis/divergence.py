@@ -236,40 +236,25 @@ def _update_monitor_table(s, symbol, date):
 
 def _get_ma5_ma10_diff_percent(df, price_col='close', decimals=2):
     """
-    Calculate (MA5 - MA10) / MA10 * 100 for the latest row.
-
-    Returns:
-        float or None: percentage difference (positive if MA5 > MA10)
-        str         : formatted string like "+4.82%" or "-7.15%" or error message
-
-    Example output:
-        5.34    →  "+5.34%"
-        -3.1    →  "-3.10%"
+    Returns a string like '+4.82%' or 'N/A' across all code paths.
     """
+    if df is None or df.empty:
+        return "N/A"
     if len(df) < 10:
-        return None, f"Not enough data — need ≥10 rows, got {len(df)}"
-
+        return "N/A"
     if price_col not in df.columns:
-        return None, f"Column '{price_col}' not found in DataFrame"
+        return "N/A"
 
-    df = df.copy()
+    d = df.copy()
+    d['ma5'] = d[price_col].rolling(window=5, min_periods=5).mean()
+    d['ma10'] = d[price_col].rolling(window=10, min_periods=10).mean()
 
-    # Calculate simple moving averages
-    df['ma5'] = df[price_col].rolling(window=5, min_periods=5).mean()
-    df['ma10'] = df[price_col].rolling(window=10, min_periods=10).mean()
-
-    latest = df.iloc[-1]
-
+    latest = d.iloc[-1]
     if pd.isna(latest['ma5']) or pd.isna(latest['ma10']):
-        return None, "Not enough valid data to compute both MA5 and MA10"
+        return "N/A"
 
     diff_pct = (latest['ma5'] - latest['ma10']) / latest['ma10'] * 100
-    rounded = round(diff_pct, decimals)
-
-    # Format with sign
-    sign = "+" if rounded > 0 else "" if rounded == 0 else ""
-    formatted = f"{sign}{rounded:.{decimals}f}%"
-    return formatted
+    return f"{diff_pct:+.{decimals}f}%"
 
 
 def _has_long_shadow(direction, df, ratio=1.05):
