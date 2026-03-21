@@ -24,15 +24,18 @@ def sendMail_Message(object, sub, message):
     today = day + ' ' + dow
 
     context = ssl.create_default_context()
-    s = smtplib.SMTP('smtp.gmail.com', 587)
-    s.starttls(context=context)
-    s.ehlo()
-
     user = object.EMAIL_USER
     pwd = object.EMAIL_PASS
     rcpt = [i for i in object.EMAIL_TO.split(',')]
-
-    s.login(user, pwd)
+    s = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
+    try:
+        s.ehlo()
+        s.starttls(context=context)
+        s.ehlo()
+        s.login(user, pwd)
+    except Exception as e:
+        logger.error(f"SMTP failure: {e}")
+        raise
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = today + " " + sub
