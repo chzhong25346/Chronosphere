@@ -31,7 +31,7 @@ def divergence_analysis(sdic, ticker=None, backtrace=None):
         .distinct()
     }
 
-    # watch_tickers = ['MDT']
+    # watch_tickers = ['000001.SZ']
 
     if None not in (ticker, backtrace):
         watch_tickers = [ticker]
@@ -147,6 +147,7 @@ def _decision_maker(
             logger.info("Volume Surge! - (%s)" % (ticker))
             picks.append(ticker + ' Volume Surge')
 
+    # is Bullish? ----------------------------------------
     if is_bullish:
         if backtrace_mode is False:
             logger.info("Finding divergence - %s - %s for %s days" % (ticker, 'Bull', days))
@@ -155,24 +156,20 @@ def _decision_maker(
         lo, hi = _find_shadow_range('Bull', df)  # is High in previous upper shadow
         is_in_shadow = lo < df.iloc[-1]['high'] <= hi and df.iloc[-1]['close'] <= lo
         long_shadow = _has_long_shadow('Bull', df)
+        diff_ma = _get_ma5_ma10_diff_percent(df, df_full, price_col='close')
         if (is_ath or is_in_shadow) and is_macdh_down:
-            if is_ath and long_shadow:
-                diff_ma = _get_ma5_ma10_diff_percent(df_full, price_col='close')
-                if diff_ma > 0:
-                    _update_monitor_table(s_financials, ticker, df.index[-1])
-                    picks.append(ticker + " ↑" + str(days) + 'New' + " \u0394" + f"{float(diff_ma):+.2f}%")
-                    logger.info("Divergence found! - (%s)" % (ticker))
+            if is_ath and long_shadow and diff_ma > 0:
+                _update_monitor_table(s_financials, ticker, df.index[-1])
+                picks.append(ticker + " ↑" + str(days) + 'New' + " \u0394" + f"{float(diff_ma):+.2f}%")
+                logger.info("Divergence found! - (%s)" % (ticker))
             elif is_ath and not long_shadow:
                 pass
-            elif is_in_shadow:
-                diff_ma = _get_ma5_ma10_diff_percent(df_full, price_col='close')
-                if diff_ma > 0:
-                    _update_monitor_table(s_financials, ticker, df.index[-1])
-                    picks.append(ticker + " ↑" + str(days) + " \u0394" + f"{float(diff_ma):+.2f}%")
-                    logger.info("Divergence found! - (%s)" % (ticker))
+            elif is_in_shadow and diff_ma > 0:
+                _update_monitor_table(s_financials, ticker, df.index[-1])
+                picks.append(ticker + " ↑" + str(days) + " \u0394" + f"{float(diff_ma):+.2f}%")
+                logger.info("Divergence found! - (%s)" % (ticker))
 
-
-    # is bearish ?
+    # is Bearish? ----------------------------------------
     else:
         if backtrace_mode is False:
             logger.info("Finding divergence - %s - %s for %s days" % (ticker, 'Bear', days))
@@ -181,21 +178,18 @@ def _decision_maker(
         lo, hi = _find_shadow_range('Bear', df)  # is High in previous lower shadow
         is_in_shadow = lo <= df.iloc[-1]['low'] < hi and df.iloc[-1]['close'] >= hi
         long_shadow = _has_long_shadow('Bear', df)
+        diff_ma = _get_ma5_ma10_diff_percent(df, df_full, price_col='close')
         if (is_atl or is_in_shadow) and is_macdh_up:
-            if is_atl and long_shadow:
-                diff_ma = _get_ma5_ma10_diff_percent(df_full, price_col='close')
-                if diff_ma < 0:
-                    _update_monitor_table(s_financials, ticker, df.index[-1])
-                    picks.append(ticker + " ↓" + str(days) + 'New' + " \u0394" + f"{float(diff_ma):+.2f}%")
-                    logger.info("Divergence found！ - (%s)" % (ticker))
+            if is_atl and long_shadow and diff_ma <  0:
+                _update_monitor_table(s_financials, ticker, df.index[-1])
+                picks.append(ticker + " ↓" + str(days) + 'New' + " \u0394" + f"{float(diff_ma):+.2f}%")
+                logger.info("Divergence found！ - (%s)" % (ticker))
             elif is_atl and not long_shadow:
                 pass
-            elif is_in_shadow:
-                diff_ma = _get_ma5_ma10_diff_percent(df_full, price_col='close')
-                if diff_ma < 0:
-                    _update_monitor_table(s_financials, ticker, df.index[-1])
-                    picks.append(ticker + " ↓" + str(days) + " \u0394" + f"{float(diff_ma):+.2f}%")
-                    logger.info("Divergence found！ - (%s)" % (ticker))
+            elif is_in_shadow and diff_ma < 0:
+                _update_monitor_table(s_financials, ticker, df.index[-1])
+                picks.append(ticker + " ↓" + str(days) + " \u0394" + f"{float(diff_ma):+.2f}%")
+                logger.info("Divergence found！ - (%s)" % (ticker))
 
 
 
@@ -246,26 +240,27 @@ def _update_monitor_table(s, symbol, date):
     s.commit()
 
 
-def _get_ma5_ma10_diff_percent(df, price_col='close'):
+def _get_ma5_ma10_diff_percent(df, df_full, price_col='close'):
     """
     Returns a string like '+4.82%' or 'N/A' across all code paths.
     """
-    if df is None or df.empty:
-        return "N/A"
-    if len(df) < 10:
-        return "N/A"
-    if price_col not in df.columns:
-        return "N/A"
+    # Complement DF
+    if df is None or df.empty or len(df) < 10 or price_col not in df.columns:
+        latest_date = df.index.max()
+        df_full_filtered = df_full[df_full.index <= latest_date]
+        df_combined = pd.concat([df_full_filtered, df])
+        df_combined = df_combined[~df_combined.index.duplicated(keep='last')]
+        df = df_combined.sort_index()
 
-    d = df.copy()
-    d['ma5'] = d[price_col].rolling(window=5, min_periods=5).mean()
-    d['ma10'] = d[price_col].rolling(window=10, min_periods=10).mean()
+    df['ma5'] = df[price_col].rolling(window=5, min_periods=5).mean()
+    df['ma10'] = df[price_col].rolling(window=10, min_periods=10).mean()
 
-    latest = d.iloc[-1]
+    latest = df.iloc[-1]
     if pd.isna(latest['ma5']) or pd.isna(latest['ma10']):
         return "N/A"
 
     diff_pct = (latest['ma5'] - latest['ma10']) / latest['ma10'] * 100
+
     return diff_pct
 
 
