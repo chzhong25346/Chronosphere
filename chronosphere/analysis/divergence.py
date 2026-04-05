@@ -31,6 +31,8 @@ def divergence_analysis(sdic, ticker=None, backtrace=None):
         .distinct()
     }
 
+    # watch_tickers = ['MDT']
+
     if None not in (ticker, backtrace):
         watch_tickers = [ticker]
         backtrace_mode = True

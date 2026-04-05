@@ -101,19 +101,17 @@ def sendMail(object, pick_dic):
     today = day + ' ' + dow
     # start talking to the SMTP server for Gmail
     context = ssl.create_default_context()
-
-    s = smtplib.SMTP('smtp.gmail.com', 587)
-    s.starttls(context=context)
-    s.ehlo()
-    # now login as my gmail user
-    user = object.EMAIL_USER
-    pwd = object.EMAIL_PASS
-    # rcpt = object.EMAIL_TO
-    rcpt = [i for i in object.EMAIL_TO.split(',')]
     try:
+        s = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
+        s.ehlo()
+        # now login as my gmail user
+        user = object.EMAIL_USER
+        pwd = object.EMAIL_PASS
+        rcpt = [i for i in object.EMAIL_TO.split(',')]
         s.login(user,pwd)
     except Exception as e:
-        logger.error(e)
+        logger.error(f"SMTP failure: {e}")
+        return  # <-- prevent crash
 
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart('alternative')
