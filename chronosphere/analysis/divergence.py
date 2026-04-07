@@ -31,7 +31,7 @@ def divergence_analysis(sdic, ticker=None, backtrace=None):
         .distinct()
     }
 
-    # watch_tickers = ['000001.SZ']
+    # watch_tickers = ['HD']
 
     if None not in (ticker, backtrace):
         watch_tickers = [ticker]
@@ -144,7 +144,7 @@ def _decision_maker(
     if any(d['symbol'] == ticker for d in monitor_list):
         latest_reached = next((item for item in monitor_list if item['symbol'] == ticker), None)['latest_reached']
         if _volume_surge(df, latest_reached):
-            logger.info("Volume Surge! - (%s)" % (ticker))
+            logger.info("Volume Surge! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d, %Y')))
             picks.append(ticker + ' Volume Surge')
 
     # is Bullish? ----------------------------------------
@@ -161,13 +161,13 @@ def _decision_maker(
             if is_ath and long_shadow and diff_ma > 0:
                 _update_monitor_table(s_financials, ticker, df.index[-1])
                 picks.append(ticker + " ↑" + str(days) + 'New' + " \u0394" + f"{float(diff_ma):+.2f}%")
-                logger.info("Divergence found! - (%s)" % (ticker))
+                logger.info("Divergence found! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d, %Y')) )
             elif is_ath and not long_shadow:
                 pass
             elif is_in_shadow and diff_ma > 0:
                 _update_monitor_table(s_financials, ticker, df.index[-1])
                 picks.append(ticker + " ↑" + str(days) + " \u0394" + f"{float(diff_ma):+.2f}%")
-                logger.info("Divergence found! - (%s)" % (ticker))
+                logger.info("Divergence found! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d, %Y')) )
 
     # is Bearish? ----------------------------------------
     else:
@@ -183,13 +183,13 @@ def _decision_maker(
             if is_atl and long_shadow and diff_ma <  0:
                 _update_monitor_table(s_financials, ticker, df.index[-1])
                 picks.append(ticker + " ↓" + str(days) + 'New' + " \u0394" + f"{float(diff_ma):+.2f}%")
-                logger.info("Divergence found！ - (%s)" % (ticker))
+                logger.info("Divergence found! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d, %Y')) )
             elif is_atl and not long_shadow:
                 pass
             elif is_in_shadow and diff_ma < 0:
                 _update_monitor_table(s_financials, ticker, df.index[-1])
                 picks.append(ticker + " ↓" + str(days) + " \u0394" + f"{float(diff_ma):+.2f}%")
-                logger.info("Divergence found！ - (%s)" % (ticker))
+                logger.info("Divergence found! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d, %Y')) )
 
 
 
