@@ -42,7 +42,7 @@ def sendNtfy_Message(sub, message, topic):
                 "Title": title
             },
             data=payload.encode("utf-8"),
-            timeout=5
+            timeout=3
         )
     except Exception as e:
         logger.error(f"ntfy send failure: {e}")
@@ -64,7 +64,7 @@ def sendNtfy(pick_dic, topic):
                 "Title": title,
             },
             data=text.encode("utf-8"),
-            timeout=5
+            timeout=3
         )
         logger.info("Sent ntfy notification")
     except Exception as e:
