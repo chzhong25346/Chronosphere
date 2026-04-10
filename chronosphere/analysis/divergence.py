@@ -1,15 +1,9 @@
-import json
 import logging
-import re
-import time
-import sys
 import pandas as pd
-import math
-
 from ..models import Index, Watchlist_Index, Quote, Quote_CSI300, Monitorlist_Index
 from .email import sendMail_Message
+from .ntfy import sendNtfy_Message
 from ..utils.config import Config
-from ..utils.utils import get_smarter_session
 from stockstats import StockDataFrame as SDF
 logger = logging.getLogger('main.divergence')
 pd.set_option('mode.chained_assignment', None)
@@ -123,6 +117,7 @@ def divergence_analysis(sdic, ticker=None, backtrace=None):
         if not backtrace_mode:
             logger.info("All Divergence found: - (%s)" % (picks))
             sendMail_Message(Config, 'Divergence Found', picks)
+            sendNtfy_Message('Divergence Found', picks, 'Divergence_20260410')
 
 
 # Assessories Functions ===================================
