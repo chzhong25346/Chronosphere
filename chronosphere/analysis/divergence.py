@@ -116,10 +116,10 @@ def divergence_analysis(sdic, ticker=None, backtrace=None):
         if not backtrace_mode:
             logger.info("All Divergence found: - (%s)", picks)
 
-            # try:
-            #     sendMail_Message(Config, 'Divergence Found', picks)
-            # except Exception as e:
-            #     logger.error("Email failed, continuing with ntfy: %s", e)
+            try:
+                sendMail_Message(Config, 'Divergence Found', picks)
+            except Exception as e:
+                logger.error("Email failed, continuing with ntfy: %s", e)
 
             # ntfy always executes
             try:
