@@ -80,9 +80,10 @@ def sendMail_Message(object, sub, message):
       <body>
         {html_body}
         <p style="background-color: yellow; padding: 10px; border-radius: 4px; color: black; line-height: 1.6;">
-        1. 关注信号后有没有大量（超过这一天）<br>
-        2. 长周期打水漂 <br>
-        3. 短周期变盘快
+        1. 买在无人问津时<br>
+        2. 卖在人声鼎沸时<br>
+        3. 周线零轴下背离时介入，勿介入中段<br>
+        4. 周MACD慢先走平
         </p>
       </body>
     </html>

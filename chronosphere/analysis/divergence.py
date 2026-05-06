@@ -25,7 +25,7 @@ def divergence_analysis(sdic, ticker=None, backtrace=None):
         .distinct()
     }
 
-    # watch_tickers = ['HD']
+    # watch_tickers = ['NOC']
 
     if None not in (ticker, backtrace):
         watch_tickers = [ticker]
@@ -116,16 +116,16 @@ def divergence_analysis(sdic, ticker=None, backtrace=None):
         if not backtrace_mode:
             logger.info("All Divergence found: - (%s)", picks)
 
-            try:
-                sendMail_Message(Config, 'Divergence Found', picks)
-            except Exception as e:
-                logger.error("Email failed, continuing with ntfy: %s", e)
-
-            # ntfy always executes
-            try:
-                sendNtfy_Message('Divergence Found', picks, 'Divergence_20260410')
-            except Exception as e:
-                logger.error("ntfy failed: %s", e)
+            # try:
+            #     sendMail_Message(Config, 'Divergence Found', picks)
+            # except Exception as e:
+            #     logger.error("Email failed, continuing with ntfy: %s", e)
+            #
+            # # ntfy always executes
+            # try:
+            #     sendNtfy_Message('Divergence Found', picks, 'Divergence_20260410')
+            # except Exception as e:
+            #     logger.error("ntfy failed: %s", e)
 
 
 # Assessories Functions ===================================
@@ -146,7 +146,7 @@ def _decision_maker(
     # latest_reached date. if true, add ticker to picks.
     if any(d['symbol'] == ticker for d in monitor_list):
         latest_reached = next((item for item in monitor_list if item['symbol'] == ticker), None)['latest_reached']
-        if _volume_surge(df, latest_reached):
+        if _volume_surge(df, df_full, latest_reached):
             logger.info("Volume Surge! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d')))
             picks.append(ticker + ' Volume Surge')
 
@@ -195,44 +195,56 @@ def _decision_maker(
                 logger.info("Divergence found! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d, %Y')) )
 
 
-
-def _volume_surge(df, latest_reached, multiplier=1.25):
+def _volume_surge(df, df_full, latest_reached, window=90, max_days=5, multiplier=1.2):
     """
-    Check if latest day's volume >= multiplier × volume on latest_reached date.
-
-    Args:
-        df (DataFrame): must contain 'volume' column
-        latest_reached (datetime-like)
-        multiplier (float)
-
-    Returns:
-        bool
+    True if:
+    1) latest day is within `max_days` trading days after latest_reached
+    2) latest volume > multiplier × 90-day average volume (computed from df_full)
     """
 
-    if df is None or df.empty:
+    if df is None or df.empty or df_full is None or df_full.empty:
         return False
 
-    if 'volume' not in df.columns:
+    if 'volume' not in df.columns or 'volume' not in df_full.columns:
         return False
 
-    # Ensure datetime index
-    if not isinstance(df.index, pd.DatetimeIndex):
-        df.index = pd.to_datetime(df.index)
+    # Ensure DatetimeIndex
+    for d in (df, df_full):
+        if not isinstance(d.index, pd.DatetimeIndex):
+            d.index = pd.to_datetime(d.index)
 
-    latest_date = df.index[-1]
-    latest_volume = df.iloc[-1]['volume']
+    df = df.sort_index()
+    df_full = df_full.sort_index()
 
-    # Convert latest_reached to Timestamp
     latest_reached = pd.to_datetime(latest_reached)
 
     if latest_reached not in df.index:
         return False
 
-    old_volume = df.loc[latest_reached]['volume']
+    # ✅ Trading-day distance check (based on sliced df)
+    latest_pos = len(df) - 1
+    reached_pos = df.index.get_loc(latest_reached)
+    days_after = latest_pos - reached_pos
 
-    if pd.isna(latest_volume) or pd.isna(old_volume):
+    if days_after <= 0 or days_after > max_days:
         return False
-    return latest_volume >= multiplier * old_volume
+
+    # ✅ 90-day average from FULL history
+    avg_90 = df_full['volume'].rolling(window=window, min_periods=window).mean()
+
+    latest_date = df.index[-1]
+
+    if latest_date not in avg_90.index:
+        return False
+
+    latest_avg = avg_90.loc[latest_date]
+    if pd.isna(latest_avg):
+        return False
+
+    latest_vol = df.loc[latest_date, 'volume']
+
+    return latest_vol > (latest_avg * multiplier)
+
 
 
 

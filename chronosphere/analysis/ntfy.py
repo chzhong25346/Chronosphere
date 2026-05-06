@@ -28,9 +28,10 @@ def sendNtfy_Message(sub, message, topic):
     payload = (
         "\n".join(lines)
         + "\n\n⚠️ 注意事项:\n"
-          "1. 关注信号后有没有大量（超过这一天）\n"
-          "2. 长周期打水漂\n"
-          "3. 短周期变盘快"
+          "1. 买在无人问津时\n"
+          "2. 卖在人声鼎沸时\n"
+          "3. 周线零轴下背离时介入，勿介入中段"
+          "4. 周MACD慢先走平"
     )
 
     url = f"https://ntfy.sh/{topic.lstrip('/')}"
