@@ -31,7 +31,7 @@ def sendNtfy_Message(sub, message, topic):
           "1. 买在无人问津时\n"
           "2. 卖在人声鼎沸时\n"
           "3. 周线零轴下背离时介入，勿介入中段\n"
-          "4. 周MACD慢先走平"
+          "4. 周MACD慢线走平"
     )
 
     url = f"https://ntfy.sh/{topic.lstrip('/')}"
