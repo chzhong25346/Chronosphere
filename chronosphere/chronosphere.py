@@ -16,11 +16,11 @@ def main(argv):
     try:
         opts, args = getopt.getopt(
             argv,
-            "ht:l:g:r:v:u:s:m:d:k:b:",
+            "ht:l:g:r:v:u:s:m:d:k:b:n:",
             [
                 "help", "turnover=", "line=", "gap", "rsi", "hvlc=",
                 "ublb=", "screener=", "monitor=", "divergence=",
-                "ticker=", "backtrace="
+                "ticker=", "backtrace=", "now="
             ]
         )
     except getopt.GetoptError as err:
@@ -33,6 +33,7 @@ def main(argv):
     selected_module = None
     ticker = None
     backtrace = None
+    ohlcv = None
 
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -81,11 +82,23 @@ def main(argv):
         elif o in ("-b", "--backtrace"):
             backtrace = int(a)
 
+        elif o in ("-n", "--now"):
+            try:
+                values = [x.strip() for x in a.split(",") if x.strip()]
+                ohlcv = tuple(float(x) for x in values)
+            except Exception:
+                raise ValueError(f"ohlcv values must be numeric: got {a}")
+
+            if len(ohlcv) != 5:
+                raise ValueError(f"ohlcv must contain exactly 5 values: got {ohlcv}")
+
         else:
-            assert False, "unhandled option"
+           assert False, "unhandled option"
 
     # Execute once, after all options are known
-    if selected_market and selected_module:
+    if selected_market and selected_module and ohlcv is not None:
+        analysis(selected_market, selected_module, ticker=ticker, backtrace=backtrace, ohlcv=ohlcv)
+    elif selected_market and selected_module:
         analysis(selected_market, selected_module, ticker=ticker, backtrace=backtrace)
     else:
         usage()
@@ -103,11 +116,12 @@ def usage():
  8. -m/--monitor market(financials)        : Price Monitor
  9. -d/--divergence market(all)            : Divergence in Watchlist[DB:financial]
 10. -k/--ticker SYMBOL                     : Optional ticker filter, e.g., MSFT
-11. -b/--backtrace N                       : Optional lookback window, e.g., 200
+11. -b/--backtrace -k SYMBOL -b DAYS       : Optional lookback window, e.g., 200 days
+12. -b/--backtrace -k -b -n OHLCV          : Optional lookback window, simulate latest day ohlcv
 """
     print(helps)
 
-def analysis(market, module, ticker=None, backtrace=None):
+def analysis(market, module, ticker=None, backtrace=None, ohlcv=None):
     logger.info('Load module: [Analysis]')
 
     if market == 'china':
@@ -142,7 +156,8 @@ def analysis(market, module, ticker=None, backtrace=None):
         s = db.session()
         sdic.update({name: s})
 
-    analysis_hub(module, sdic=sdic, ticker=ticker, backtrace=backtrace)
+    analysis_hub(module, sdic=sdic, ticker=ticker, backtrace=backtrace, ohlcv=ohlcv)
+
 
     for name, s in sdic.items():
         try:

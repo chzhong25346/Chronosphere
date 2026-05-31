@@ -9,10 +9,9 @@ logger = logging.getLogger('main.divergence')
 pd.set_option('mode.chained_assignment', None)
 
 
-def divergence_analysis(sdic, ticker=None, backtrace=None):
+def divergence_analysis(sdic, ticker=None, backtrace=None, ohlcv=None):
     backtrace_mode = False
     s_financials = sdic['financials']
-
     monitor_list= [{'symbol': row.symbol,
                   'latest_reached': row.latest_reached} for row in s_financials.query(Monitorlist_Index).distinct().all()]
 
@@ -64,6 +63,29 @@ def divergence_analysis(sdic, ticker=None, backtrace=None):
                     df = pd.read_sql(s.query(Quote).\
                         filter(Quote.symbol == ticker).\
                         statement, s.bind, index_col='date').sort_index()
+
+                if backtrace_mode and ohlcv is not None:
+                    latest_date = df.index[-1]
+                    next_date = latest_date + pd.tseries.offsets.BDay(1)
+                    o, h, l, c, v = ohlcv
+
+                    new_row = {
+                        'symbol': ticker,
+                        'open': o,
+                        'high': h,
+                        'low': l,
+                        'close': c,
+                        'volume': v
+                    }
+
+                    if 'adjusted' in df.columns:
+                        new_row['adjusted'] = c
+
+                    # create new DF row
+                    df_new = pd.DataFrame([new_row], index=[next_date])
+
+                    # append + keep order
+                    df = pd.concat([df, df_new]).sort_index()
 
                 # Check if weekly macd is bullish? Example output: True 15  -> bullish for 3 weeks (~15 trading days)
                 is_bullish, days = _weekly_updown_trend(df.copy())

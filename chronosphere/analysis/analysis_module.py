@@ -12,7 +12,7 @@ from ..utils.utils import run_at_time
 logger = logging.getLogger('main.analysis_module')
 
 
-def analysis_hub(type, sdic=None, s=None, ticker=None, backtrace=None):
+def analysis_hub(type, sdic=None, s=None, ticker=None, backtrace=None, ohlcv=None):
     if type == 'turnover':
         logger.info('Run Task: [Turnover Analysis]')
         tor_analysis(sdic)
@@ -40,6 +40,6 @@ def analysis_hub(type, sdic=None, s=None, ticker=None, backtrace=None):
         # monitor_analysis(sdic)
     elif type == 'divergence':
         logger.info('Run Task: [divergence]')
-        divergence_analysis(sdic, ticker=ticker, backtrace=backtrace)
+        divergence_analysis(sdic, ticker=ticker, backtrace=backtrace, ohlcv=ohlcv)
 
 
