@@ -9,7 +9,7 @@ logger = logging.getLogger('main.divergence')
 pd.set_option('mode.chained_assignment', None)
 
 
-def divergence_analysis(sdic, ticker=None, backtrace=None, ohlcv=None):
+def divergence_analysis(sdic, ticker=None, backtrace=None, ohlcv=None, weekly_only=False):
     backtrace_mode = False
     s_financials = sdic['financials']
     monitor_list= [{'symbol': row.symbol,
@@ -24,7 +24,7 @@ def divergence_analysis(sdic, ticker=None, backtrace=None, ohlcv=None):
         .distinct()
     }
 
-    # watch_tickers = ['NOC']
+    # watch_tickers = ['WSP.TO']
 
     if None not in (ticker, backtrace):
         watch_tickers = [ticker]
@@ -118,7 +118,8 @@ def divergence_analysis(sdic, ticker=None, backtrace=None, ohlcv=None):
                                         ticker=ticker,
                                         is_bullish=is_bullish,
                                         days=days,
-                                        backtrace_mode=True
+                                        backtrace_mode=True,
+                                        weekly_only=weekly_only,
                                     )
 
                 # Normal mode watchliist @ financials
@@ -131,7 +132,8 @@ def divergence_analysis(sdic, ticker=None, backtrace=None, ohlcv=None):
                         picks=picks,
                         ticker=ticker,
                         is_bullish=is_bullish,
-                        days=days
+                        days=days,
+                        weekly_only=weekly_only,
                         )
 
     if len(picks) > 0:
@@ -139,13 +141,19 @@ def divergence_analysis(sdic, ticker=None, backtrace=None, ohlcv=None):
             logger.info("All Divergence found: - (%s)", picks)
 
             try:
-                sendMail_Message(Config, 'Divergence Found', picks)
+                if weekly_only:
+                    sendMail_Message(Config, 'Divergence Found Weekly', picks)
+                else:
+                    sendMail_Message(Config, 'Divergence Found', picks)
             except Exception as e:
                 logger.error("Email failed, continuing with ntfy: %s", e)
 
             # ntfy always executes
             try:
-                sendNtfy_Message('Divergence Found', picks, 'Divergence_20260410')
+                if weekly_only:
+                    sendNtfy_Message('Divergence Found Weekly', picks, 'Divergence_20260410')
+                else:
+                    sendNtfy_Message('Divergence Found', picks, 'Divergence_20260410')
             except Exception as e:
                 logger.error("ntfy failed: %s", e)
 
@@ -161,8 +169,13 @@ def _decision_maker(
         ticker,
         is_bullish,
         days,
-        backtrace_mode=False):
+        backtrace_mode=False,
+        weekly_only=False,
+        ):
 
+    if weekly_only:
+        df = to_weekly_df(df)
+        df = _get_macd(df)
 
     # If ticker in monitor list already, check if volume of latest day is 1.2 times larger than the volume of
     # latest_reached date. if true, add ticker to picks.
@@ -497,5 +510,41 @@ def _weekly_updown_trend(df):
     return is_bullish, exact_trading_days
 
 
+def to_weekly_df(df):
+    if df is None or df.empty:
+        return df
+
+    df = df.copy()
+
+    if not isinstance(df.index, pd.DatetimeIndex):
+        df.index = pd.to_datetime(df.index)
+
+    df = df.sort_index()
+    df.columns = [c.lower() for c in df.columns]
+
+    agg_map = {
+        "open": "first",
+        "high": "max",
+        "low": "min",
+        "close": "last",
+        "volume": "sum",
+    }
+
+    if "adjusted" in df.columns:
+        agg_map["adjusted"] = "last"
+
+    df_weekly = (
+        df.resample("W-FRI", label="right", closed="right")
+          .agg(agg_map)
+          .dropna(how="all")
+    )
+
+    if "symbol" in df.columns:
+        df_weekly.insert(0, "symbol", df["symbol"].iloc[-1])
+
+    # Change index from Friday to Monday
+    df_weekly.index = df_weekly.index - pd.Timedelta(days=4)
+
+    return df_weekly
 
 

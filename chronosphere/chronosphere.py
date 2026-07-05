@@ -16,11 +16,11 @@ def main(argv):
     try:
         opts, args = getopt.getopt(
             argv,
-            "ht:l:g:r:v:u:s:m:d:k:b:n:",
+            "ht:l:g:r:v:u:s:m:d:k:b:n:w",
             [
                 "help", "turnover=", "line=", "gap", "rsi", "hvlc=",
                 "ublb=", "screener=", "monitor=", "divergence=",
-                "ticker=", "backtrace=", "now="
+                "ticker=", "backtrace=", "now=", "weekly_only=",
             ]
         )
     except getopt.GetoptError as err:
@@ -34,6 +34,7 @@ def main(argv):
     ticker = None
     backtrace = None
     ohlcv = None
+    weekly_only = False
 
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -82,6 +83,9 @@ def main(argv):
         elif o in ("-b", "--backtrace"):
             backtrace = int(a)
 
+        elif o in ("-w", "--weekly_only"):
+            weekly_only = True
+
         elif o in ("-n", "--now"):
             try:
                 values = [x.strip() for x in a.split(",") if x.strip()]
@@ -97,9 +101,9 @@ def main(argv):
 
     # Execute once, after all options are known
     if selected_market and selected_module and ohlcv is not None:
-        analysis(selected_market, selected_module, ticker=ticker, backtrace=backtrace, ohlcv=ohlcv)
+        analysis(selected_market, selected_module, ticker=ticker, backtrace=backtrace, ohlcv=ohlcv, weekly_only=weekly_only)
     elif selected_market and selected_module:
-        analysis(selected_market, selected_module, ticker=ticker, backtrace=backtrace)
+        analysis(selected_market, selected_module, ticker=ticker, backtrace=backtrace, weekly_only=weekly_only)
     else:
         usage()
         sys.exit(2)
@@ -118,10 +122,11 @@ def usage():
 10. -k/--ticker SYMBOL                     : Optional ticker filter, e.g., MSFT
 11. -b/--backtrace -k SYMBOL -b DAYS       : Optional lookback window, e.g., 200 days
 12. -b/--backtrace -k -b -n OHLCV          : Optional lookback window, simulate latest day ohlcv
+13. -d all -w                              : Weekly Divergence in Watchlist[DB:financial]
 """
     print(helps)
 
-def analysis(market, module, ticker=None, backtrace=None, ohlcv=None):
+def analysis(market, module, ticker=None, backtrace=None, ohlcv=None, weekly_only=False):
     logger.info('Load module: [Analysis]')
 
     if market == 'china':
@@ -156,7 +161,7 @@ def analysis(market, module, ticker=None, backtrace=None, ohlcv=None):
         s = db.session()
         sdic.update({name: s})
 
-    analysis_hub(module, sdic=sdic, ticker=ticker, backtrace=backtrace, ohlcv=ohlcv)
+    analysis_hub(module, sdic=sdic, ticker=ticker, backtrace=backtrace, ohlcv=ohlcv, weekly_only=weekly_only)
 
 
     for name, s in sdic.items():

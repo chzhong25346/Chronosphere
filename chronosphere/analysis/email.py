@@ -80,10 +80,10 @@ def sendMail_Message(object, sub, message):
       <body>
         {html_body}
         <p style="background-color: yellow; padding: 10px; border-radius: 4px; color: black; line-height: 1.6;">
-        1. 买在无人问津时<br>
-        2. 卖在人声鼎沸时<br>
-        3. 周线零轴下背离时介入，勿介入中段<br>
-        4. 周MACD慢线走平
+        1. 周线零轴以下<br>
+        2. 价格、量柱、MACD线背离<br>
+        3. 周MACD慢线走平<br>
+        4. W底形态
         </p>
       </body>
     </html>
