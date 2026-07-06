@@ -197,13 +197,15 @@ def _decision_maker(
         diff_ma = _get_ma5_ma10_diff_percent(df, df_full, price_col='close')
         if (is_ath or is_in_shadow) and is_macdh_down:
             if is_ath and long_shadow and diff_ma > 0:
-                _update_monitor_table(s_financials, ticker, df.index[-1])
+                if weekly_only is False:
+                    _update_monitor_table(s_financials, ticker, df.index[-1])
                 picks.append(f"{ticker} ↑{days}NewΔ{float(diff_ma):+.2f}% - {df.index[-1].strftime('%b %d')}")
                 logger.info("Divergence found! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d')) )
             elif is_ath and not long_shadow:
                 pass
             elif is_in_shadow and diff_ma > 0:
-                _update_monitor_table(s_financials, ticker, df.index[-1])
+                if weekly_only is False:
+                    _update_monitor_table(s_financials, ticker, df.index[-1])
                 picks.append(f"{ticker} ↑{days}Δ{float(diff_ma):+.2f}% - {df.index[-1].strftime('%b %d')}")
                 logger.info("Divergence found! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d')) )
 
@@ -219,13 +221,15 @@ def _decision_maker(
         diff_ma = _get_ma5_ma10_diff_percent(df, df_full, price_col='close')
         if (is_atl or is_in_shadow) and is_macdh_up:
             if is_atl and long_shadow and diff_ma <  0:
-                _update_monitor_table(s_financials, ticker, df.index[-1])
+                if weekly_only is False:
+                    _update_monitor_table(s_financials, ticker, df.index[-1])
                 picks.append(f"{ticker} ↓{days}NewΔ{float(diff_ma):+.2f}% - {df.index[-1].strftime('%b %d')}")
                 logger.info("Divergence found! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d')) )
             elif is_atl and not long_shadow:
                 pass
             elif is_in_shadow and diff_ma < 0:
-                _update_monitor_table(s_financials, ticker, df.index[-1])
+                if weekly_only is False:
+                    _update_monitor_table(s_financials, ticker, df.index[-1])
                 picks.append(f"{ticker} ↓{days}Δ{float(diff_ma):+.2f}% - {df.index[-1].strftime('%b %d')}")
                 logger.info("Divergence found! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d, %Y')) )
 
