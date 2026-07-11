@@ -181,9 +181,10 @@ def _decision_maker(
     # latest_reached date. if true, add ticker to picks.
     if any(d['symbol'] == ticker for d in monitor_list):
         latest_reached = next((item for item in monitor_list if item['symbol'] == ticker), None)['latest_reached']
-        if _volume_surge(df, df_full, latest_reached):
-            logger.info("Volume Surge! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d')))
-            picks.append(ticker + ' Volume Surge')
+        if not weekly_only:
+            if _volume_surge(df, df_full, latest_reached):
+                logger.info("Volume Surge! - (%s) - %s" % (ticker, df.index[-1].strftime('%b %d')))
+                picks.append(ticker + ' Volume Surge')
 
     # is Bullish? ----------------------------------------
     if is_bullish:
