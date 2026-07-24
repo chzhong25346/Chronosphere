@@ -1,6 +1,6 @@
 pandas==1.5.3
 urllib3==1.26.13
-stockstats==0.3.0
+stockstats==0.6.5
 numpy==1.24.3
 SQLAlchemy==1.4.44
 beautifulsoup4==4.11.1

@@ -441,10 +441,10 @@ def _get_macd(df):
     d.columns = [c.lower() for c in d.columns]
 
     s = SDF.retype(d)
-    # Defaults are MACD (12,26,9)
-    d['macd']  = s['macd']    # DIF
-    d['macds'] = s['macds']   # DEA
-    d['macdh'] = s['macdh']   # Histogram (DIF - DEA)
+
+    d['macd'] = s['macd_14,56,5']
+    d['macds'] = s['macds_14,56,5']
+    d['macdh'] = s['macdh_14,56,5']
 
     return d
 
@@ -466,7 +466,14 @@ def _weekly_updown_trend(df):
     df.columns = [c.lower() for c in df.columns]
 
     # Build weekly OHLCV
-    agg_map = {'open': 'first','high': 'max','low': 'min','close': 'last','volume': 'sum'}
+    agg_map = {
+        'open': 'first',
+        'high': 'max',
+        'low': 'min',
+        'close': 'last',
+        'volume': 'sum'
+    }
+
     if 'adjusted' in df.columns:
         agg_map['adjusted'] = 'last'
 
@@ -474,7 +481,6 @@ def _weekly_updown_trend(df):
     n_symbols = df['symbol'].nunique() if has_symbol else 1
 
     if n_symbols > 1:
-        # If a multi-symbol df slipped through, filter to one or adapt as needed
         raise ValueError("This helper expects a single-ticker DataFrame.")
 
     # Weekly bars (Mon–Fri grouped, labeled on Friday)
@@ -483,34 +489,39 @@ def _weekly_updown_trend(df):
           .agg(agg_map)
           .dropna(how='all')
     )
+
     if has_symbol:
         df_weekly.insert(0, 'symbol', df['symbol'].iloc[-1])
 
-    # Compute weekly MACD
+    # Compute weekly MACD (14,56,5)
     stock = SDF.retype(df_weekly.copy())
-    _ = stock['macd']; _ = stock['macds']; _ = stock['macdh']
 
-    sig = stock[['macd','macds']].dropna()
+    sig = pd.DataFrame({
+        'macd': stock['macd_14,56,5'],
+        'macds': stock['macds_14,56,5'],
+    }).dropna()
+
     if sig.empty:
         return None, 0
 
     bull = sig['macd'] > sig['macds']
     run_id = bull.ne(bull.shift()).cumsum()
-    # Identify current run (the last run_id)
+
     current_run_id = int(run_id.iloc[-1])
-    current_run_weeks = sig.index[run_id == current_run_id]  # DatetimeIndex of weekly labels (Fridays)
+    current_run_weeks = sig.index[run_id == current_run_id]
     is_bullish = bool(bull.iloc[-1])
 
-    # Count exact trading days in those weekly periods from the original daily df
-    # Build a mapping of week-ending Friday -> count of daily rows that fall in that Sat–Fri window
+    # Count exact trading days in the current regime
     daily_counts = (
         df.assign(_one=1)
           .groupby(pd.Grouper(freq='W-FRI', label='right', closed='right'))['_one']
           .sum()
           .dropna()
     )
-    # Sum only the weeks that are in the current run
-    exact_trading_days = int(daily_counts.reindex(current_run_weeks).fillna(0).sum())
+
+    exact_trading_days = int(
+        daily_counts.reindex(current_run_weeks).fillna(0).sum()
+    )
 
     return is_bullish, exact_trading_days
 
