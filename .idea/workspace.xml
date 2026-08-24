@@ -5,7 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d7f209db-18c1-4ca5-a477-f401ade601af" name="Changes" comment="fix smtp issue">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chronosphere/analysis/divergence.py" beforeDir="false" afterPath="$PROJECT_DIR$/chronosphere/analysis/divergence.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chronosphere/analysis/email.py" beforeDir="false" afterPath="$PROJECT_DIR$/chronosphere/analysis/email.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chronosphere/utils/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/chronosphere/utils/config.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

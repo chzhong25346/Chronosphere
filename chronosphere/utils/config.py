@@ -8,8 +8,8 @@ class Config():
     DB_HOST = os.environ.get('DB_HOST')
     DB_NAME = None
     TS_KEY = os.environ.get('TS_KEY')
-    EMAIL_USER = os.environ.get('EMAIL_USER')
-    EMAIL_PASS = os.environ.get('EMAIL_PASS')
-    EMAIL_TO = os.environ.get('EMAIL_TO')
+    EMAIL_USER = os.environ.get('EMAIL_163_USER')
+    EMAIL_PASS = os.environ.get('EMAIL_163_PASS')
+    EMAIL_TO = os.environ.get('EMAIL_163_USER')
     MONITOR_HOST = os.environ.get('MONITOR_HOST')
 

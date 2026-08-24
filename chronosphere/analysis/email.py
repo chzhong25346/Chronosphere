@@ -27,14 +27,17 @@ def sendMail_Message(object, sub, message):
     user = object.EMAIL_USER
     pwd = object.EMAIL_PASS
     rcpt = [i for i in object.EMAIL_TO.split(',')]
-    s = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
     try:
-        s.ehlo()
-        s.starttls(context=context)
-        s.ehlo()
+        s = smtplib.SMTP_SSL(
+            "smtp.163.com",
+            465,
+            context=context,
+            timeout=30,
+        )
         s.login(user, pwd)
+
     except Exception as e:
-        logger.error(f"SMTP failure: {e}")
+        logger.exception("163 SMTP connection/login failed")
         raise
 
     msg = MIMEMultipart('alternative')
@@ -92,8 +95,23 @@ def sendMail_Message(object, sub, message):
 
     msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-    s.sendmail(user, rcpt, msg.as_string())
-    s.quit()
+    try:
+        s.sendmail(
+            user,
+            rcpt,
+            msg.as_string(),
+        )
+
+        logger.info(
+            "Divergence email sent successfully to: %s",
+            ", ".join(rcpt),
+        )
+
+    finally:
+        try:
+            s.quit()
+        except Exception:
+            s.close()
 
 
 def sendMail(object, pick_dic):
@@ -129,10 +147,23 @@ def sendMail(object, pick_dic):
     # the HTML message, is best and preferred.
     msg.attach(attachment)
 
-    # send the email
-    s.sendmail(user, rcpt, msg.as_string())
-    # we're done
-    s.quit()
+    try:
+        s.sendmail(
+            user,
+            rcpt,
+            msg.as_string(),
+        )
+
+        logger.info(
+            "Divergence email sent successfully to: %s",
+            ", ".join(rcpt),
+        )
+
+    finally:
+        try:
+            s.quit()
+        except Exception:
+            s.close()
     logger.info("Screener sent email")
 
 

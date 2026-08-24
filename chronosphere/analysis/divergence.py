@@ -4,7 +4,6 @@ from ..models import Index, Watchlist_Index, Quote, Quote_CSI300, Monitorlist_In
 from .email import sendMail_Message
 from .ntfy import sendNtfy_Message
 from ..utils.config import Config
-from stockstats import StockDataFrame as SDF
 logger = logging.getLogger('main.divergence')
 pd.set_option('mode.chained_assignment', None)
 
@@ -89,6 +88,9 @@ def divergence_analysis(sdic, ticker=None, backtrace=None, ohlcv=None, weekly_on
 
                 # Check if weekly macd is bullish? Example output: True 15  -> bullish for 3 weeks (~15 trading days)
                 is_bullish, days = _weekly_updown_trend(df.copy())
+                if is_bullish is None or days <= 0:
+                    logger.warning("Unable to determine weekly MACD trend: %s", ticker)
+                    continue
 
                 # Add MACD in df and slice trend days
                 df = _get_macd(df)
@@ -425,36 +427,38 @@ def _rows_in_trend(df, n):
 
 
 # Calculate MACD
-def _get_macd(df):
-    """
-    Compute daily MACD on a daily OHLCV DataFrame using StockStats.
-    Returns a copy with ['macd', 'macds', 'macdh'] columns.
-    """
-    d = df.copy()
+def _calculate_macd(df, fast=14, slow=56, signal=5):
+    """Calculate MACD with pandas EMA and add macd/macds/macdh columns."""
+    if df is None or df.empty:
+        return df
 
-    # Ensure DatetimeIndex and sorted
+    d = df.copy()
     if not isinstance(d.index, pd.DatetimeIndex):
         d.index = pd.to_datetime(d.index)
     d = d.sort_index()
-
-    # StockStats expects lowercase column names
     d.columns = [c.lower() for c in d.columns]
 
-    s = SDF.retype(d)
+    if "close" not in d.columns:
+        raise KeyError("MACD calculation requires a 'close' column.")
 
-    d['macd'] = s['macd_14,56,5']
-    d['macds'] = s['macds_14,56,5']
-    d['macdh'] = s['macdh_14,56,5']
-
+    close = pd.to_numeric(d["close"], errors="coerce")
+    ema_fast = close.ewm(span=fast, adjust=False, min_periods=1).mean()
+    ema_slow = close.ewm(span=slow, adjust=False, min_periods=1).mean()
+    d["macd"] = ema_fast - ema_slow
+    d["macds"] = d["macd"].ewm(span=signal, adjust=False, min_periods=1).mean()
+    d["macdh"] = d["macd"] - d["macds"]
     return d
 
+
+def _get_macd(df):
+    """Compute daily MACD using the existing 14, 56, 5 parameters."""
+    return _calculate_macd(df, fast=14, slow=56, signal=5)
 
 
 def _weekly_updown_trend(df):
     """
-    Returns:
-        is_bullish (bool): DIF > DEA on weekly MACD
-        days (int): exact number of trading days in the current regime, based on your daily records
+    Returns weekly MACD direction and the exact trading-day count
+    in the current weekly regime.
     """
     if df is None or df.empty:
         return None, 0
@@ -465,64 +469,59 @@ def _weekly_updown_trend(df):
     df = df.sort_index()
     df.columns = [c.lower() for c in df.columns]
 
-    # Build weekly OHLCV
+    required = {"open", "high", "low", "close", "volume"}
+    missing = required.difference(df.columns)
+    if missing:
+        raise KeyError(
+            "Weekly MACD calculation missing columns: "
+            + ", ".join(sorted(missing))
+        )
+
     agg_map = {
-        'open': 'first',
-        'high': 'max',
-        'low': 'min',
-        'close': 'last',
-        'volume': 'sum'
+        "open": "first",
+        "high": "max",
+        "low": "min",
+        "close": "last",
+        "volume": "sum",
     }
+    if "adjusted" in df.columns:
+        agg_map["adjusted"] = "last"
 
-    if 'adjusted' in df.columns:
-        agg_map['adjusted'] = 'last'
-
-    has_symbol = 'symbol' in df.columns
-    n_symbols = df['symbol'].nunique() if has_symbol else 1
-
+    has_symbol = "symbol" in df.columns
+    n_symbols = df["symbol"].nunique() if has_symbol else 1
     if n_symbols > 1:
         raise ValueError("This helper expects a single-ticker DataFrame.")
 
-    # Weekly bars (Mon–Fri grouped, labeled on Friday)
     df_weekly = (
-        df.resample('W-FRI', label='right', closed='right')
-          .agg(agg_map)
-          .dropna(how='all')
+        df.resample("W-FRI", label="right", closed="right")
+        .agg(agg_map)
+        .dropna(subset=["close"])
     )
+    if df_weekly.empty:
+        return None, 0
 
     if has_symbol:
-        df_weekly.insert(0, 'symbol', df['symbol'].iloc[-1])
+        df_weekly.insert(0, "symbol", df["symbol"].iloc[-1])
 
-    # Compute weekly MACD (14,56,5)
-    stock = SDF.retype(df_weekly.copy())
-
-    sig = pd.DataFrame({
-        'macd': stock['macd_14,56,5'],
-        'macds': stock['macds_14,56,5'],
-    }).dropna()
-
+    df_weekly = _calculate_macd(df_weekly, fast=14, slow=56, signal=5)
+    sig = df_weekly[["macd", "macds"]].dropna()
     if sig.empty:
         return None, 0
 
-    bull = sig['macd'] > sig['macds']
+    bull = sig["macd"] > sig["macds"]
     run_id = bull.ne(bull.shift()).cumsum()
-
-    current_run_id = int(run_id.iloc[-1])
+    current_run_id = run_id.iloc[-1]
     current_run_weeks = sig.index[run_id == current_run_id]
     is_bullish = bool(bull.iloc[-1])
 
-    # Count exact trading days in the current regime
     daily_counts = (
         df.assign(_one=1)
-          .groupby(pd.Grouper(freq='W-FRI', label='right', closed='right'))['_one']
-          .sum()
-          .dropna()
+        .groupby(pd.Grouper(freq="W-FRI", label="right", closed="right"))["_one"]
+        .sum()
     )
-
     exact_trading_days = int(
         daily_counts.reindex(current_run_weeks).fillna(0).sum()
     )
-
     return is_bullish, exact_trading_days
 
 
