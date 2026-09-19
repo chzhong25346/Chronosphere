@@ -192,6 +192,13 @@ def _decision_maker(
     if is_bullish:
         if backtrace_mode is False:
             logger.info("Finding divergence - %s - %s for %s days" % (ticker, 'Bull', days))
+
+        # Daily Bull filter only; weekly mode keeps its existing wide sensitivity.
+        # Buffer permits the low to remain up to 1% above MA10.
+        if not weekly_only and not _daily_ma5_ma10_filter(
+            df, df_full, is_bullish=True, buffer=0.01
+        ):
+            return
         is_ath = df.iloc[-1]['high'] == df['high'].max(skipna=True)  # All Time High
         is_macdh_down = len(df) >= 2 and (df['macdh'].iloc[-1] < df['macdh'].iloc[-2])  # Bar Lower than previous
         lo, hi = _find_shadow_range('Bull', df)  # is High in previous upper shadow
@@ -216,6 +223,13 @@ def _decision_maker(
     else:
         if backtrace_mode is False:
             logger.info("Finding divergence - %s - %s for %s days" % (ticker, 'Bear', days))
+
+        # Daily Bear filter only; weekly mode keeps its existing wide sensitivity.
+        # Buffer permits the high to remain up to 1% below MA10.
+        if not weekly_only and not _daily_ma5_ma10_filter(
+            df, df_full, is_bullish=False, buffer=0.01
+        ):
+            return
         is_atl = df.iloc[-1]['low'] == df['low'].min(skipna=True)  # All Time Low
         is_macdh_up = len(df) >= 2 and (df['macdh'].iloc[-1] > df['macdh'].iloc[-2])  # Bar higher than previous
         lo, hi = _find_shadow_range('Bear', df)  # is High in previous lower shadow
@@ -295,6 +309,55 @@ def _update_monitor_table(s, symbol, date):
     s.add(Monitorlist_Index(symbol=symbol,
                       latest_reached=date))
     s.commit()
+
+
+def _daily_ma5_ma10_filter(df, df_full, is_bullish, buffer=0.01):
+    """Return whether the latest daily bar is in the MA5/MA10 sweet spot.
+
+    Bull: close < MA5 and low <= MA10 * (1 + buffer).
+    Bear: MA5 < close and high >= MA10 * (1 - buffer).
+    Missing or invalid values fail closed.
+    """
+    required = ["close", "low", "high"]
+    if df is None or df.empty or df_full is None or df_full.empty:
+        return False
+    if any(column not in df.columns for column in required):
+        return False
+    if any(column not in df_full.columns for column in required):
+        return False
+
+    latest_date = df.index[-1]
+    history = df_full.loc[df_full.index <= latest_date, required].copy()
+    history = pd.concat([history, df.loc[:, required]])
+    history = history[~history.index.duplicated(keep="last")].sort_index()
+
+    close = pd.to_numeric(history["close"], errors="coerce")
+    low = pd.to_numeric(history["low"], errors="coerce")
+    high = pd.to_numeric(history["high"], errors="coerce")
+    ma5 = close.rolling(window=5, min_periods=5).mean()
+    ma10 = close.rolling(window=10, min_periods=10).mean()
+
+    latest_close = close.iloc[-1]
+    latest_low = low.iloc[-1]
+    latest_high = high.iloc[-1]
+    latest_ma5 = ma5.iloc[-1]
+    latest_ma10 = ma10.iloc[-1]
+
+    if any(pd.isna(value) for value in (
+        latest_close, latest_low, latest_high, latest_ma5, latest_ma10
+    )):
+        return False
+
+    if is_bullish:
+        return (
+            latest_close < latest_ma5
+            and latest_low <= latest_ma10 * (1 + buffer)
+        )
+
+    return (
+        latest_ma5 < latest_close
+        and latest_high >= latest_ma10 * (1 - buffer)
+    )
 
 
 def _get_ma5_ma10_diff_percent(df, df_full, price_col='close'):
